@@ -292,6 +292,16 @@ export interface WFundamentals {
   risk?: { beta: number | null; flags: WRiskFlag[] };
   next_earnings?: string | null;
 }
+export interface WStrategyFactor { key: string; label: string; score: number | null; drivers: string[] }
+export interface WStrategy {
+  available: boolean; symbol?: string;
+  signal?: "long" | "short" | "neutral";
+  stance?: string; archetype?: string;
+  conviction?: number; composite?: number | null;
+  factors?: WStrategyFactor[];
+  bull_points?: string[]; bear_points?: string[];
+  disclaimer?: string;
+}
 export interface BacktestStrategy { key: string; name: string; params: Record<string, number>; desc: string }
 export interface BacktestResult {
   available: boolean; error?: string;
@@ -338,6 +348,7 @@ export const api = {
   wStock: (symbol: string) => get<WStockDetail>(`/w/stock?symbol=${encodeURIComponent(symbol)}`),
   wSearch: (q: string) => get<WSearchHit[]>(`/w/search?q=${encodeURIComponent(q)}`),
   wQuant: (symbol: string) => get<WQuant>(`/w/quant?symbol=${encodeURIComponent(symbol)}`),
+  wStrategy: (symbol: string) => get<WStrategy>(`/w/strategy?symbol=${encodeURIComponent(symbol)}`),
   wFundamentals: (symbol: string) => get<WFundamentals>(`/w/fundamentals?symbol=${encodeURIComponent(symbol)}`),
   sectorOverview: (wiki: string, radar: string) =>
     get<SectorOverview>(`/sector?wiki=${encodeURIComponent(wiki)}&radar=${encodeURIComponent(radar)}`),

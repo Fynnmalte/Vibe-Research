@@ -33,6 +33,7 @@ import wstock
 import theses
 import quant
 import backtest
+import strategy
 import agent as agent_mod
 import notify
 
@@ -431,6 +432,16 @@ def w_quant(symbol: str = Query(..., min_length=1, max_length=16)):
         return {"data": quant.analyze(symbol)}
     except Exception as e:  # noqa: BLE001
         raise HTTPException(502, f"Quant-Analyse nicht verfügbar: {e}") from e
+
+
+@app.get("/api/w/strategy")
+def w_strategy(symbol: str = Query(..., min_length=1, max_length=16)):
+    """Fundamental-Positionierung: mechanisches Multi-Faktor-Modell (Value/Quality/Health/
+    Growth/Momentum) → Long/Neutral/Short. Transparente Regeln, keine Prognose/Beratung."""
+    try:
+        return {"data": strategy.analyze(symbol)}
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(502, f"Strategie-Analyse nicht verfügbar: {e}") from e
 
 
 @app.get("/api/sector")

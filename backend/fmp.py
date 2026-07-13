@@ -128,7 +128,10 @@ def fundamentals(symbol: str) -> dict:
                 w52_high = None
 
         pe = _num(rt.get("priceToEarningsRatioTTM"))
-        fpe = _num(rt.get("forwardPriceToEarningsGrowthRatioTTM"))  # naeherung
+        # ratios-ttm hat KEIN echtes Forward-KGV — das frühere Feld
+        # forwardPriceToEarningsGrowthRatioTTM ist ein (Forward-)PEG, kein KGV
+        # (lieferte z.B. NVDA 0.76). Kein verlässliches Forward-KGV im Gratisplan -> None.
+        fpe = None
         peg = _num(rt.get("priceToEarningsGrowthRatioTTM"))
         pb = _num(rt.get("priceToBookRatioTTM"))
         ev_ebitda = _num(rt.get("enterpriseValueMultipleTTM"))
@@ -138,7 +141,6 @@ def fundamentals(symbol: str) -> dict:
         dte_ratio = _num(rt.get("debtToEquityRatioTTM"))          # als Verhaeltnis (0.79)
         dte = round(dte_ratio * 100, 1) if dte_ratio is not None else None  # UI erwartet %-Skala
         cr = _num(rt.get("currentRatioTTM"))
-        fcf_ps = _num(rt.get("freeCashFlowPerShareTTM"))
         dy = _num(rt.get("dividendYieldTTM"))
         payout = _num(rt.get("dividendPayoutRatioTTM"))
         # ROE via DuPont: Nettomarge * Asset-Turnover * Financial-Leverage
@@ -176,7 +178,8 @@ def fundamentals(symbol: str) -> dict:
             },
             "balance": {"debt_to_equity": dte, "current_ratio": cr,
                         "total_cash": None,
-                        "free_cashflow": fcf_ps},
+                        # freeCashFlowPerShareTTM ist FCF *pro Aktie*, nicht Gesamt-FCF -> nicht als free_cashflow ausgeben
+                        "free_cashflow": None},
             "analyst": {"recommendation": None, "count": None,
                         "target_mean": None, "target_high": None, "target_low": None,
                         "price": price},
