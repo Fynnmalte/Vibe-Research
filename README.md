@@ -1,6 +1,6 @@
 # Vibe-Research · Persönliches KI-Investment-Research (US / EU / HK / A-Aktien)
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License: MIT + PolyForm-NC](https://img.shields.io/badge/License-MIT%20%2B%20PolyForm--NC-yellow.svg)](LICENSING.md)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![React 19](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
@@ -227,4 +227,12 @@ Aktienmarkt birgt Risiken — entscheide eigenständig, prüfe selbst, das Risik
 
 ## 📄 License
 
-MIT — siehe [LICENSE](LICENSE). Copyright © simonlin1212 (Original) und Mitwirkende.
+**Doppelte Lizenz** (Details: [`LICENSING.md`](LICENSING.md)):
+
+- Ursprünglicher Code von **simonlin1212** + die Daten-Toolkits → **MIT** ([`LICENSE`](LICENSE)).
+- **Eigenständige Ergänzungen dieses Forks** (Strategie-Engine, Datenschicht, Quant/Backtest,
+  Agent, Setup-Skripte, deutsche UI …) → **PolyForm Noncommercial 1.0.0**
+  ([`LICENSE-ADDITIONS.md`](LICENSE-ADDITIONS.md)), © 2026 Fynn Malte Hellwig.
+
+Nicht-kommerzielle Nutzung ist frei. Kommerzielle Nutzung der Fork-Ergänzungen nur durch
+den Copyright-Inhaber bzw. mit dessen schriftlicher Erlaubnis. Keine Rechtsberatung.
