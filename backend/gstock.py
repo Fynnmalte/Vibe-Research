@@ -23,11 +23,11 @@ _gs_host = [0]  # 当前可用主机下标；首次 push2 掉连后 latch 到 pu
 
 # 全球指数（东财 push2 secid）—— A 股看隔夜外围脸色的核心几个，均已实测。
 _INDICES = (
-    {"key": "dji", "name": "道琼斯", "secid": "100.DJIA", "region": "美股"},
-    {"key": "spx", "name": "标普500", "secid": "100.SPX", "region": "美股"},
-    {"key": "ndx", "name": "纳斯达克", "secid": "100.NDX", "region": "美股"},
-    {"key": "hsi", "name": "恒生指数", "secid": "100.HSI", "region": "港股"},
-    {"key": "hstech", "name": "恒生科技", "secid": "124.HSTECH", "region": "港股"},
+    {"key": "dji", "name": "Dow Jones", "secid": "100.DJIA", "region": "USA"},
+    {"key": "spx", "name": "S&P 500", "secid": "100.SPX", "region": "USA"},
+    {"key": "ndx", "name": "Nasdaq 100", "secid": "100.NDX", "region": "USA"},
+    {"key": "hsi", "name": "Hang Seng", "secid": "100.HSI", "region": "Hongkong"},
+    {"key": "hstech", "name": "Hang Seng Tech", "secid": "124.HSTECH", "region": "Hongkong"},
 )
 
 # 搜索返回的 MktNum → (secucode 后缀, 市场名)
@@ -64,10 +64,18 @@ def _price(d: dict, key: str):
     return round(v / (10 ** dec), dec)
 
 
+def _latin_name(name, code):
+    """Eastmoney liefert chinesische Namen (z.B. 苹果 für AAPL). Ohne verlässliche
+    englische Quelle: Ticker als Anzeigename, sobald der Name CJK-Zeichen enthält."""
+    if name and any("一" <= ch <= "鿿" for ch in name):
+        return code or name
+    return name or code
+
+
 def _quote_from(d: dict) -> dict:
     chg = d.get("f170")
     return {
-        "code": d.get("f57"), "name": d.get("f58"),
+        "code": d.get("f57"), "name": _latin_name(d.get("f58"), d.get("f57")),
         "price": _price(d, "f43"), "open": _price(d, "f46"),
         "high": _price(d, "f44"), "low": _price(d, "f45"),
         "prev_close": _price(d, "f60"),
@@ -175,7 +183,7 @@ def us_hk_stock(query: str) -> dict:
     quote = _quote_from(d or {})  # 行情临时取不到也返回完整 null 形状，契合 GlobalQuote 类型
     return {
         "code": info["code"],
-        "name": info["name"] or quote.get("name") or info["code"],
+        "name": _latin_name(info["name"], info["code"]) or quote.get("name") or info["code"],
         "market": info["market"],
         "quote": quote,
         "metrics": _key_metrics(info["secucode"]) if info["market"] != "KR" else None,  # 韩股东财无 F10 财务

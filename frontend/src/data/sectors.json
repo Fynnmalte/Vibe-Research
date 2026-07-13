@@ -1,42 +1,223 @@
 {
-  "_comment": "板块·环节骨架（开源版单一来源）。零具体标的：nodes 只有产业链环节名。verified=true 者环节已核实（来自做透的板块）；false 者为占位，待实时核实补全（禁止靠模型记忆编）。用户可在本地 my-watchlist.json 挂自己的标的，不进仓库。",
+  "_comment": "Sektor-/Kettenglied-Gerüst (Open-Source-Version, einzelne Quelle). Null konkrete Titel: nodes enthalten nur Namen von Wertschöpfungsketten-Gliedern. verified=true bedeutet Glied verifiziert (aus durchgearbeiteten Sektoren); false ist Platzhalter, per Echtzeit noch zu verifizieren (nicht aus Modellwissen erfinden). Nutzer können lokal in my-watchlist.json eigene Titel hängen, kommt nicht ins Repository.",
   "indices": {
-    "aShare": ["上证指数", "深证成指", "创业板指", "沪深300"],
-    "us": ["道琼斯", "纳斯达克", "标普500"]
+    "aShare": [
+      "SSE Composite",
+      "SZSE Component",
+      "ChiNext",
+      "CSI 300"
+    ],
+    "us": [
+      "Dow Jones",
+      "Nasdaq",
+      "S&P 500"
+    ]
   },
   "sectors": [
     {
       "key": "humanoid",
-      "label": "人形机器人",
-      "tagline": "从减速器到灵巧手，AI 具身智能的物理载体",
+      "label": "Humanoide Roboter",
+      "tagline": "Vom Getriebe bis zur geschickten Hand — der physische Träger verkörperter KI",
       "hot": true,
       "verified": true,
-      "nodes": ["谐波减速器", "行星滚柱丝杠", "无框力矩电机", "灵巧手", "六维力传感器", "具身大模型"]
+      "nodes": [
+        "Harmonic-Drive-Getriebe",
+        "Planetenrollengewindetrieb",
+        "rahmenlose Torque-Motoren",
+        "geschickte Hand",
+        "6-Achs-Kraftsensor",
+        "verkörpertes großes Modell"
+      ],
+      "wiki": "Humanoider Roboter",
+      "radar": "robot"
     },
     {
       "key": "ai-computing",
-      "label": "AI 算力",
-      "tagline": "算力基建的产业链——芯片、光互连、封装、散热",
+      "label": "KI-Rechenleistung",
+      "tagline": "Wertschöpfungskette der Recheninfrastruktur — Chips, optische Vernetzung, Packaging, Kühlung",
       "hot": true,
       "verified": true,
-      "nodes": ["AI芯片", "光模块", "CPO光互连", "HBM存储", "先进封装", "PCB", "液冷散热"]
+      "nodes": [
+        "KI-Chip",
+        "optisches Modul",
+        "CPO optische Vernetzung",
+        "HBM-Speicher",
+        "Advanced Packaging",
+        "PCB",
+        "Flüssigkeitskühlung"
+      ],
+      "wiki": "Künstliche Intelligenz",
+      "radar": "ai"
     },
-    { "key": "hbm", "label": "HBM", "tagline": "高带宽存储——AI 芯片的内存瓶颈", "hot": true, "verified": false, "nodes": [] },
-    { "key": "cpo", "label": "光互联", "tagline": "光电共封装（CPO）——突破铜互连的带宽墙", "hot": true, "verified": false, "nodes": [] },
-    { "key": "semiconductor", "label": "半导体国产替代", "tagline": "设备、材料、EDA、制造的自主链条", "hot": true, "verified": false, "nodes": [] },
-    { "key": "solid-state-battery", "label": "固态电池", "tagline": "下一代电池的材料与工艺路线", "hot": true, "verified": false, "nodes": [] },
-    { "key": "low-altitude", "label": "低空经济", "tagline": "eVTOL、空管、基建与运营", "hot": true, "verified": false, "nodes": [] },
-    { "key": "smart-driving", "label": "智能驾驶", "tagline": "感知、算力、线控与整车", "hot": true, "verified": false, "nodes": [] },
-    { "key": "innovative-drug", "label": "创新药", "tagline": "靶点、临床、CXO 与出海", "hot": true, "verified": false, "nodes": [] },
-    { "key": "power-grid", "label": "电网与特高压", "tagline": "输配电设备与新型电力系统", "hot": false, "verified": false, "nodes": [] },
-    { "key": "defense", "label": "军工", "tagline": "航空、航天、船舶与信息化", "hot": false, "verified": false, "nodes": [] },
-    { "key": "fusion", "label": "可控核聚变", "tagline": "磁约束、超导与第一壁材料", "hot": true, "verified": false, "nodes": [] },
-    { "key": "business-space", "label": "商业航天", "tagline": "火箭、卫星制造与卫星互联网", "hot": true, "verified": false, "nodes": [] },
-    { "key": "ai-pharma", "label": "生物医药", "tagline": "创新药、AI 制药与生物技术", "hot": true, "verified": false, "nodes": [] },
-    { "key": "resources", "label": "资源卡口", "tagline": "稀土、锗、铟等被卡的关键资源", "hot": false, "verified": false, "nodes": [] },
-    { "key": "ai-application", "label": "AI 应用", "tagline": "大模型落地的应用与 Agent", "hot": true, "verified": false, "nodes": [] },
-    { "key": "ai-hardware", "label": "AI 硬件", "tagline": "端侧、AI 眼镜与消费终端", "hot": true, "verified": false, "nodes": [] },
-    { "key": "energy-storage", "label": "储能", "tagline": "电化学储能与电网侧调峰", "hot": false, "verified": false, "nodes": [] },
-    { "key": "data-element", "label": "数据要素", "tagline": "数据确权、交易与流通基建", "hot": false, "verified": false, "nodes": [] }
+    {
+      "key": "hbm",
+      "label": "HBM",
+      "tagline": "High-Bandwidth-Memory — der Speicherengpass von KI-Chips",
+      "hot": true,
+      "verified": false,
+      "nodes": [],
+      "wiki": "High Bandwidth Memory",
+      "radar": "semi"
+    },
+    {
+      "key": "cpo",
+      "label": "Optische Vernetzung",
+      "tagline": "Co-Packaged Optics (CPO) — durchbricht die Bandbreitengrenze der Kupfer-Vernetzung",
+      "hot": true,
+      "verified": false,
+      "nodes": [],
+      "wiki": "Photonik",
+      "radar": "semi"
+    },
+    {
+      "key": "semiconductor",
+      "label": "Halbleiter-Lokalisierung",
+      "tagline": "Autonome Kette aus Anlagen, Materialien, EDA und Fertigung",
+      "hot": true,
+      "verified": false,
+      "nodes": [],
+      "wiki": "Halbleiterindustrie",
+      "radar": "semi"
+    },
+    {
+      "key": "solid-state-battery",
+      "label": "Festkörperbatterie",
+      "tagline": "Material- und Prozessrouten der nächsten Batteriegeneration",
+      "hot": true,
+      "verified": false,
+      "nodes": [],
+      "wiki": "Feststoffbatterie",
+      "radar": "energy"
+    },
+    {
+      "key": "low-altitude",
+      "label": "Low-Altitude-Economy",
+      "tagline": "eVTOL, Luftraummanagement, Infrastruktur und Betrieb",
+      "hot": true,
+      "verified": false,
+      "nodes": [],
+      "wiki": "Flugtaxi",
+      "radar": "space"
+    },
+    {
+      "key": "smart-driving",
+      "label": "Autonomes Fahren",
+      "tagline": "Wahrnehmung, Rechenleistung, By-Wire und Gesamtfahrzeug",
+      "hot": true,
+      "verified": false,
+      "nodes": [],
+      "wiki": "Autonomes Fahren",
+      "radar": "auto"
+    },
+    {
+      "key": "innovative-drug",
+      "label": "Innovative Medikamente",
+      "tagline": "Targets, Klinik, CXO und Auslandsexpansion",
+      "hot": true,
+      "verified": false,
+      "nodes": [],
+      "wiki": "Pharmaindustrie",
+      "radar": "bio"
+    },
+    {
+      "key": "power-grid",
+      "label": "Stromnetz & Höchstspannung",
+      "tagline": "Übertragungs-/Verteilanlagen und neue Stromsysteme",
+      "hot": false,
+      "verified": false,
+      "nodes": [],
+      "wiki": "Stromnetz",
+      "radar": "energy"
+    },
+    {
+      "key": "defense",
+      "label": "Rüstung",
+      "tagline": "Luftfahrt, Raumfahrt, Schiffbau und Digitalisierung",
+      "hot": false,
+      "verified": false,
+      "nodes": [],
+      "wiki": "Rüstungsindustrie",
+      "radar": "tech"
+    },
+    {
+      "key": "fusion",
+      "label": "Kernfusion",
+      "tagline": "Magneteinschluss, Supraleiter und First-Wall-Materialien",
+      "hot": true,
+      "verified": false,
+      "nodes": [],
+      "wiki": "Kernfusion",
+      "radar": "science"
+    },
+    {
+      "key": "business-space",
+      "label": "Kommerzielle Raumfahrt",
+      "tagline": "Raketen, Satellitenbau und Satelliteninternet",
+      "hot": true,
+      "verified": false,
+      "nodes": [],
+      "wiki": "Raumfahrttechnik",
+      "radar": "space"
+    },
+    {
+      "key": "ai-pharma",
+      "label": "Biopharma",
+      "tagline": "Innovative Medikamente, KI-Pharma und Biotechnologie",
+      "hot": true,
+      "verified": false,
+      "nodes": [],
+      "wiki": "Pharmaindustrie",
+      "radar": "bio"
+    },
+    {
+      "key": "resources",
+      "label": "Kritische Ressourcen",
+      "tagline": "Seltene Erden, Germanium, Indium und andere Engpass-Ressourcen",
+      "hot": false,
+      "verified": false,
+      "nodes": [],
+      "wiki": "Seltene Erden",
+      "radar": "macro"
+    },
+    {
+      "key": "ai-application",
+      "label": "KI-Anwendungen",
+      "tagline": "Anwendungen und Agents auf Basis großer Modelle",
+      "hot": true,
+      "verified": false,
+      "nodes": [],
+      "wiki": "Künstliche Intelligenz",
+      "radar": "ai"
+    },
+    {
+      "key": "ai-hardware",
+      "label": "KI-Hardware",
+      "tagline": "Edge-Geräte, KI-Brillen und Consumer-Endgeräte",
+      "hot": true,
+      "verified": false,
+      "nodes": [],
+      "wiki": "Wearable Computing",
+      "radar": "consumer"
+    },
+    {
+      "key": "energy-storage",
+      "label": "Energiespeicher",
+      "tagline": "Elektrochemische Speicher und netzseitige Spitzenlastregelung",
+      "hot": false,
+      "verified": false,
+      "nodes": [],
+      "wiki": "Energiespeicher",
+      "radar": "energy"
+    },
+    {
+      "key": "data-element",
+      "label": "Datenökonomie",
+      "tagline": "Datenrechte, -handel und Zirkulationsinfrastruktur",
+      "hot": false,
+      "verified": false,
+      "nodes": [],
+      "wiki": "Big Data",
+      "radar": "tech"
+    }
   ]
 }

@@ -17,9 +17,8 @@ from urllib.parse import urlparse
 
 import requests
 
-import astock
 import cli_runtime
-import gstock
+import wstock
 
 MAX_ROUNDS = 6  # 工具调用最大轮数，防死循环
 _TOOL_RESULT_CAP = 6000  # 单次工具结果注入上限（控 token）
@@ -28,96 +27,112 @@ _TOOL_RESULT_CAP = 6000  # 单次工具结果注入上限（控 token）
 # 让弱模型也能输出结构化、覆盖全、不漏项的专业解读。焊进 SYSTEM_PROMPT，不做成 UI 选项——
 # 用户就问，给出的就是这套框架的结论。合规：框架只规定「怎么读数据」，每维只陈述事实与相对位置，
 # 最后不给买卖结论。
-ANALYSIS_FRAMEWORK = """【投研分析框架】当用户要你分析个股、给判断或下结论时，按下面五个维度依次组织分析，每维用一两句讲清数据事实与相对位置，最后只做客观归纳、不给买卖结论：
-1. 估值：PE / PB / PS 的绝对水平 + 处在历史区间的高 / 中 / 低位 + 同业对比 + 机构一致预期的前向估值。
-2. 资金面：主力资金流方向与强度 + 融资融券趋势 + 股东户数（筹码集中 / 分散）+ 龙虎榜 / 大宗异动。
-3. 财报质量：营收与扣非净利增速是否匹配 + 经营现金流含金量 + 毛利 / 净利率趋势 + 资产负债率。
-4. 行业景气：板块 / 概念归属 + 板块近期强弱 + 行业内相对排名 + 关联热门概念热度。
-5. 事件催化与风险：重要公告 + 解禁 + 分红 + 舆情，客观分列「催化」与「风险」两栏。
+ANALYSIS_FRAMEWORK = """[Analyse-Rahmen] Wenn der Nutzer eine Aktie analysieren oder einordnen lassen will, gliedere die Analyse nach diesen Dimensionen — je ein bis zwei Sätze mit Datenfakten und relativer Einordnung, am Ende nur objektive Zusammenfassung, keine Kauf/Verkauf-Schlussfolgerung:
+1. Bewertung: KGV (trailing + forward), EPS, Marktkapitalisierung, Position innerhalb der 52-Wochen-Spanne, Vergleich zur Branche.
+2. Kursverhalten: Tagesveränderung, Verhältnis zum Vortagesschluss, Nähe zu 52-Wochen-Hoch/-Tief, Handelsvolumen relativ zum Schnitt.
+3. Markt- und Sektorumfeld: Wie laufen die Indizes (S&P, DAX, Hang Seng) und der zugehörige Sektor heute? Relative Stärke/Schwäche.
+4. Nachrichtenlage: relevante aktuelle Meldungen/Themen aus dem Nachrichten-Radar, objektiv als Katalysatoren vs. Risiken getrennt.
 
-输出组织（像专业研报那样排版，但只陈述客观事实、不做任何买卖/评级/目标价建议）：
-- 结论先行：开头一句话客观概括当前基本面 / 估值 / 资金面处于什么状态，再附「关键数据速览」。
-- 每个维度用「**加粗小标题** + 一小段展开」，别堆流水账数字。
-- 有对比就上小表格（如估值 vs 同业、财报同比）。
-- 末尾分列「关键观察」与「风险点」两栏。
-（简单的事实性问题——如"现价多少"——直接答，不必套用整个框架。）"""
+Ausgabe (wie eine professionelle Kurzanalyse, aber nur objektive Fakten, kein Rating/Kursziel/Timing):
+- Fazit zuerst: ein Satz zum aktuellen Zustand (Bewertung/Kurs/Umfeld), dann „Kennzahlen-Schnellübersicht".
+- Jede Dimension als **fette Zwischenüberschrift** + kurzer Absatz, keine Zahlenwüste.
+- Bei Vergleichen eine kleine Tabelle.
+- Am Ende zwei Spalten: „Wichtige Beobachtungen" und „Risiken".
+(Einfache Faktenfragen — z.B. „wie hoch ist der Kurs" — direkt beantworten, ohne den ganzen Rahmen.)"""
 
-# 用 f-string 先把框架焊进去，只留 {{context}} 给运行时 .format() 填——4 处调用点无需改。
-SYSTEM_PROMPT = f"""你是 Vibe-Research 里的投研助理。你可以调用工具获取客观数据来支撑回答：
-A 股用 query_quote / query_valuation / query_reports / query_news（传 6 位代码）；
-美股 / 港股 / 韩股用 query_global_stock（美股用字母代码如 AAPL / NVDA，港股用数字如 00700，韩股用 6 位数字加 .KS 如三星 005930.KS）。
+# f-string schweißt den Rahmen ein; nur {{context}} bleibt für .format() zur Laufzeit.
+SYSTEM_PROMPT = f"""Du bist der Research-Assistent in Vibe-Research (Fokus: US-, EU- und Hongkong-Aktien).
+Du kannst Werkzeuge aufrufen, um objektive Live-Daten zu holen, bevor du antwortest:
+- search_stock: Name / ISIN / Ticker → passende Yahoo-Symbole (z.B. „Siemens" → SIE.DE).
+- query_stock: vollständige Einzelaktien-Daten zu einem Symbol (Kurs, KGV, EPS, Marktkap., 52-Wochen).
+- query_quotes: mehrere Symbole auf einmal (Kurs + Tagesveränderung).
+- query_indices: Marktindizes (S&P 500, Nasdaq, Dow, DAX, Euro Stoxx, Hang Seng).
+- query_movers: größte Tagesgewinner/-verlierer aus DAX 40 + US-Large-Caps.
+Yahoo-Schreibweise: US-Ticker direkt (AAPL), Xetra mit .DE (SAP.DE), Hongkong mit .HK (0700.HK), Index mit ^ (^GDAXI).
 
-硬性规则（务必遵守）：
-- 只做信息整理、数据解读与多视角分析；不推荐任何具体买卖、不预测涨跌与价位、不给买卖时机、不承诺收益、不打分排名。
-- 需要数据时先调工具拿客观数据，再基于数据回答；不要编造数字。
-- 涉及个股时用工具查到的真实数据；讲清多空两面与风险，让用户自己判断。
-- 用简洁中文回答。
+Harte Regeln (unbedingt einhalten):
+- Nur Informationsaufbereitung, Datendeutung und Analyse aus mehreren Blickwinkeln; keine konkreten Kauf/Verkauf-Empfehlungen, keine Kurs-/Preisprognosen, kein Timing, keine Renditeversprechen, keine Ratings.
+- Wenn Daten nötig sind, erst das passende Werkzeug aufrufen, dann auf Basis der echten Daten antworten — keine Zahlen erfinden.
+- Bei Einzelaktien immer die per Werkzeug geholten echten Daten nutzen; beide Seiten (Chancen/Risiken) darlegen, Urteil dem Nutzer überlassen.
+- Antworte auf Deutsch, knapp und klar.
 
 {ANALYSIS_FRAMEWORK}
 
-当前页面上下文：
+Aktueller Seitenkontext:
+{{context}}"""
+
+# CLI-Abo (Claude Code / Qwen …) kann KEIN Function-Calling — die CLI ist Text rein/raus.
+# Darum: keine Werkzeug-Aufforderung (die CLI würde sonst nach Tools suchen), stattdessen
+# arbeitet sie ausschließlich mit den Daten, die die App vorab in den Kontext geladen hat.
+SYSTEM_PROMPT_CLI = f"""Du bist der Research-Assistent in Vibe-Research (Fokus: US-, EU- und Hongkong-Aktien).
+
+Wichtig: Du kannst KEINE Werkzeuge aufrufen. Alle verfügbaren Live-Daten stehen bereits im
+Seitenkontext unten. Nutze ausschließlich diese Daten. Fehlt eine benötigte Zahl, sage das
+offen — erfinde niemals Kurse, Kennzahlen oder Fakten.
+
+Harte Regeln (unbedingt einhalten):
+- Nur Informationsaufbereitung, Datendeutung und Analyse aus mehreren Blickwinkeln; keine konkreten Kauf/Verkauf-Empfehlungen, keine Kurs-/Preisprognosen, kein Timing, keine Renditeversprechen, keine Ratings.
+- Beide Seiten (Chancen/Risiken) darlegen, das Urteil dem Nutzer überlassen.
+- Antworte auf Deutsch, knapp und klar.
+
+{ANALYSIS_FRAMEWORK}
+
+Aktueller Seitenkontext (enthält die Live-Daten):
 {{context}}"""
 
 TOOLS = [
     {
         "type": "function",
         "function": {
-            "name": "query_quote",
-            "description": "查 A 股实时行情：现价/涨跌/PE/PB/市值/换手/涨跌停。可批量。",
+            "name": "search_stock",
+            "description": "Aktie über Name, Ticker oder ISIN finden → passende Yahoo-Symbole. Bei unklarer Eingabe (Firmenname/ISIN) zuerst das aufrufen, dann mit dem Symbol weiter.",
             "parameters": {
                 "type": "object",
-                "properties": {
-                    "codes": {"type": "array", "items": {"type": "string"}, "description": "6 位股票代码列表，如 ['600519','000858']"},
-                },
-                "required": ["codes"],
+                "properties": {"query": {"type": "string", "description": "Firmenname, Ticker oder ISIN, z.B. 'Siemens', 'AAPL', 'DE0007164600'"}},
+                "required": ["query"],
             },
         },
     },
     {
         "type": "function",
         "function": {
-            "name": "query_valuation",
-            "description": "查单只个股的完整估值：行情 + 机构一致预期 EPS + 前向PE/PEG/PE消化年数。",
+            "name": "query_stock",
+            "description": "Vollständige Einzelaktien-Daten: Kurs, Tagesveränderung, Vortagesschluss, OHLC, Volumen, Marktkapitalisierung, KGV (trailing+forward), EPS, 52-Wochen-Hoch/-Tief, Währung, Börse.",
             "parameters": {
                 "type": "object",
-                "properties": {"code": {"type": "string", "description": "6 位股票代码"}},
-                "required": ["code"],
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "query_reports",
-            "description": "查个股近期研报列表（标题/机构/评级/日期）。",
-            "parameters": {
-                "type": "object",
-                "properties": {"code": {"type": "string", "description": "6 位股票代码"}},
-                "required": ["code"],
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "query_news",
-            "description": "查个股近期新闻（标题/时间/来源）。",
-            "parameters": {
-                "type": "object",
-                "properties": {"code": {"type": "string", "description": "6 位股票代码"}},
-                "required": ["code"],
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "query_global_stock",
-            "description": "查美股 / 港股 / 韩股个股：行情（现价/涨跌/市值/成交额）+ 关键财务指标（韩股仅行情、无财务）。美股用字母代码(如 AAPL/NVDA)，港股用数字(如 00700)，韩股用 6 位数字加 .KS 后缀(如三星 005930.KS、SK海力士 000660.KS)。",
-            "parameters": {
-                "type": "object",
-                "properties": {"symbol": {"type": "string", "description": "美股字母代码 / 港股代码 / 韩股 XXXXXX.KS"}},
+                "properties": {"symbol": {"type": "string", "description": "Yahoo-Symbol, z.B. AAPL / SAP.DE / 0700.HK"}},
                 "required": ["symbol"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "query_quotes",
+            "description": "Kurse mehrerer Symbole auf einmal (Name, Kurs, Tagesveränderung, Währung). Für Vergleiche / Watchlists.",
+            "parameters": {
+                "type": "object",
+                "properties": {"symbols": {"type": "array", "items": {"type": "string"}, "description": "Liste von Yahoo-Symbolen, z.B. ['AAPL','MSFT','SAP.DE']"}},
+                "required": ["symbols"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "query_indices",
+            "description": "Aktuelle Marktindizes: S&P 500, Nasdaq, Dow Jones, DAX, Euro Stoxx 50, Hang Seng (Stand + Tagesveränderung).",
+            "parameters": {"type": "object", "properties": {}},
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "query_movers",
+            "description": "Größte Tagesgewinner und -verlierer aus DAX 40 + US-Large-Caps (objektive Rangliste).",
+            "parameters": {
+                "type": "object",
+                "properties": {"limit": {"type": "integer", "description": "Anzahl je Seite (Standard 8)"}},
             },
         },
     },
@@ -125,26 +140,23 @@ TOOLS = [
 
 
 def _exec_tool(name: str, args: dict):
-    """执行工具，返回可序列化结果（失败返回 error 字段，不抛）。"""
+    """Werkzeug ausführen, serialisierbares Ergebnis zurück (bei Fehler error-Feld, kein Wurf)."""
     try:
-        if name == "query_quote":
-            return astock.tencent_quote([str(c) for c in args.get("codes", [])])
-        if name == "query_valuation":
-            return astock.full_valuation(str(args["code"]))
-        if name == "query_reports":
-            rows = astock.eastmoney_reports(str(args["code"]), max_pages=1)[:15]
-            return [{k: r.get(k) for k in ("title", "publishDate", "orgSName", "emRatingName")} for r in rows]
-        if name == "query_news":
-            rows = astock.stock_news(str(args["code"]), limit=15)
-            return [{k: r.get(k) for k in ("新闻标题", "发布时间", "文章来源")} for r in rows]
-        if name == "query_global_stock":
-            data = gstock.us_hk_stock(str(args.get("symbol", "")))
-            return data or {"error": "未找到该美股/港股/韩股代码"}
-        return {"error": f"未知工具 {name}"}
-    except astock.DependencyMissing as e:
-        return {"error": str(e)}
-    except Exception as e:  # noqa: BLE001 — 工具错误回喂给模型，不中断循环
-        return {"error": f"{name} 执行失败：{e}"}
+        if name == "search_stock":
+            return wstock.search(str(args.get("query", "")))
+        if name == "query_stock":
+            data = wstock.stock(str(args.get("symbol", "")))
+            return data or {"error": f"Symbol '{args.get('symbol')}' nicht gefunden"}
+        if name == "query_quotes":
+            syms = [str(s).strip().upper() for s in args.get("symbols", []) if str(s).strip()]
+            return list(wstock.quotes(syms).values())
+        if name == "query_indices":
+            return wstock.indices()
+        if name == "query_movers":
+            return wstock.movers(int(args.get("limit", 8)))
+        return {"error": f"Unbekanntes Werkzeug {name}"}
+    except Exception as e:  # noqa: BLE001 — Werkzeugfehler zurück ans Modell, Schleife läuft weiter
+        return {"error": f"{name} fehlgeschlagen: {e}"}
 
 
 # —— 防 SSRF：用户可自带 OpenAI 兼容端点，但后端替其发请求前要挡住指向云元数据/内网的地址 ——
@@ -256,7 +268,7 @@ def run_chat_cli(cfg: dict, user_messages: list, context: str = "") -> dict:
     """
     provider = str(cfg.get("provider", ""))
     kind = provider[4:] if provider.startswith("cli-") else provider
-    system = SYSTEM_PROMPT.format(context=context or "（无）")
+    system = SYSTEM_PROMPT_CLI.format(context=context or "(keine)")
     user = "\n\n".join(m.get("content", "") for m in user_messages if m.get("content")) or "（无问题）"
     content = cli_runtime.run_cli(kind, system, user)
     return {"content": content, "trace": [], "rounds": 1}
@@ -386,7 +398,7 @@ def run_chat_cli_stream(cfg: dict, user_messages: list, context: str = ""):
     """订阅接入流式：CLI stdout 边出边推 delta。"""
     provider = str(cfg.get("provider", ""))
     kind = provider[4:] if provider.startswith("cli-") else provider
-    system = SYSTEM_PROMPT.format(context=context or "（无）")
+    system = SYSTEM_PROMPT_CLI.format(context=context or "(keine)")
     user = "\n\n".join(m.get("content", "") for m in user_messages if m.get("content")) or "（无问题）"
     for chunk in cli_runtime.run_cli_stream(kind, system, user):
         yield {"type": "delta", "text": chunk}

@@ -1,31 +1,47 @@
+import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Plus, Wrench } from "lucide-react";
+import { ArrowLeft, Plus, BookOpen, Newspaper, ExternalLink, Loader2 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { AskAiButton } from "@/components/ui/AskAiButton";
 import { Disclaimer } from "@/components/ui/Disclaimer";
+import { api, type SectorOverview } from "@/lib/api";
 import sectorsData from "@/data/sectors.json";
 
 export function SectorDetail() {
   const { key } = useParams();
   const sector = sectorsData.sectors.find((s) => s.key === key);
+  const [ov, setOv] = useState<SectorOverview | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!sector) return;
+    setLoading(true);
+    api.sectorOverview((sector as any).wiki || "", (sector as any).radar || "")
+      .then(setOv)
+      .catch(() => setOv({ overview: null, news: [] }))
+      .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
 
   if (!sector) {
     return (
       <div className="py-20 text-center text-muted-foreground">
-        未找到该板块。<Link to="/sectors" className="text-primary">返回板块中心</Link>
+        Sektor nicht gefunden. <Link to="/sectors" className="text-primary">Zurück zu den Sektoren</Link>
       </div>
     );
   }
 
   const aiContext =
-    `板块：${sector.label}\n定位：${sector.tagline}\n产业链环节：` +
-    (sector.nodes.length ? sector.nodes.join("、") : "（环节梳理中）");
+    `Sektor: ${sector.label}\nPositionierung: ${sector.tagline}\nWertschöpfungskette: ` +
+    (sector.nodes.length ? sector.nodes.join(", ") : "(Glieder werden noch aufbereitet)") +
+    (ov?.overview ? `\n\nÜberblick (Wikipedia): ${ov.overview.extract}` : "") +
+    (ov?.news?.length ? `\n\nAktuelle Meldungen: ${ov.news.slice(0, 6).map((n) => n.zh || n.title).join("; ")}` : "");
 
   return (
     <div>
       <Link to="/sectors" className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="h-4 w-4" /> 板块中心
+        <ArrowLeft className="h-4 w-4" /> Sektoren
       </Link>
 
       <PageHeader
@@ -34,39 +50,90 @@ export function SectorDetail() {
         actions={
           <AskAiButton
             context={aiContext}
-            label="让 AI 拆这个板块"
-            suggestions={["按七维框架拆解", "这个板块的产业链地图", "哪个环节卡脖子", "有什么风险信号"]}
+            label="KI diesen Sektor aufschlüsseln lassen"
+            suggestions={["Ordne diesen Sektor kurz ein", "Wertschöpfungskette und Engpässe", "Wer sind die wichtigsten Player", "Welche Chancen und Risiken"]}
           />
         }
       />
 
+      {/* Überblick (Wikipedia) */}
+      {loading ? (
+        <GlassCard className="mb-4">
+          <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Überblick lädt…
+          </div>
+        </GlassCard>
+      ) : ov?.overview ? (
+        <GlassCard className="mb-4">
+          <div className="flex gap-4">
+            {ov.overview.thumbnail && (
+              <img src={ov.overview.thumbnail} alt="" className="hidden h-20 w-20 shrink-0 rounded-lg object-cover sm:block" />
+            )}
+            <div>
+              <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold">
+                <BookOpen className="h-4 w-4 text-primary" /> Überblick
+              </h3>
+              <p className="text-sm leading-relaxed text-muted-foreground">{ov.overview.extract}</p>
+              {ov.overview.url && (
+                <a href={ov.overview.url} target="_blank" rel="noreferrer" className="mt-1.5 inline-flex items-center gap-1 text-[11px] text-primary/80 hover:text-primary">
+                  Wikipedia <ExternalLink className="h-3 w-3" />
+                </a>
+              )}
+            </div>
+          </div>
+        </GlassCard>
+      ) : null}
+
+      {/* Kern-Glieder / Platzhalter */}
       {sector.verified ? (
-        <div>
-          <h3 className="mb-3 text-sm font-semibold text-muted-foreground">核心环节（{sector.nodes.length}）</h3>
+        <GlassCard className="mb-4">
+          <h3 className="mb-3 text-sm font-semibold text-muted-foreground">Kern-Glieder der Wertschöpfungskette ({sector.nodes.length})</h3>
           <div className="flex flex-wrap gap-2.5">
             {sector.nodes.map((n) => (
-              <span key={n} className="rounded-full border border-primary/40 bg-primary/15 px-3.5 py-1.5 text-sm font-medium text-foreground shadow-glow transition-colors hover:bg-primary/25">
+              <span key={n} className="rounded-full border border-primary/30 bg-primary/10 px-3.5 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-primary/20">
                 {n}
               </span>
             ))}
           </div>
           <p className="mt-4 flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Plus className="h-3.5 w-3.5" /> 想在某个环节挂上自己关注的标的？数据存在你本地，不会上传、不进仓库。
+            <Plus className="h-3.5 w-3.5" /> Eigene beobachtete Titel an ein Glied hängen? Daten bleiben lokal, kein Upload.
           </p>
-        </div>
+        </GlassCard>
       ) : (
-        <GlassCard>
-          <div className="flex flex-col items-center gap-3 py-8 text-center">
-            <Wrench className="h-8 w-8 text-muted-foreground/50" />
-            <p className="text-sm text-muted-foreground">
-              该板块的环节骨架尚在<b className="text-foreground">实时核实</b>补全中（不靠模型记忆）——已核实的板块见左侧。
-            </p>
-            <p className="max-w-md text-xs text-muted-foreground/70">
-              也可以点右上角「让 AI 拆这个板块」，用你自己的 AI 按七维框架当场梳理它的产业链。
-            </p>
-          </div>
+        <GlassCard className="mb-4">
+          <h3 className="mb-2 text-sm font-semibold text-muted-foreground">Wertschöpfungskette</h3>
+          <p className="text-sm text-muted-foreground">
+            Das Gliedergerüst ist noch nicht verifiziert. Nutze oben rechts »KI diesen Sektor aufschlüsseln lassen« —
+            die KI baut die Kette anhand von Überblick und aktuellen Meldungen auf.
+          </p>
         </GlassCard>
       )}
+
+      {/* Nachrichten aus dem Radar */}
+      <GlassCard>
+        <h3 className="mb-3 flex items-center gap-1.5 text-sm font-semibold">
+          <Newspaper className="h-4 w-4 text-primary" /> Aktuelle Meldungen
+        </h3>
+        {loading ? (
+          <p className="flex items-center gap-2 py-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> lädt…</p>
+        ) : !ov?.news?.length ? (
+          <p className="text-sm text-muted-foreground/60">
+            Keine Meldungen gecacht. Im <Link to="/intel" className="text-primary">Nachrichten-Radar</Link> einmal »Aktualisieren«, dann erscheinen sie hier.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {ov.news.map((n, i) => (
+              <a key={i} href={n.url} target="_blank" rel="noreferrer"
+                className="group flex items-baseline gap-3 border-b border-border/30 pb-2 text-sm last:border-0">
+                <span className="w-24 shrink-0 font-mono text-xs text-muted-foreground/70">{n.time}</span>
+                <span className="w-20 shrink-0 truncate text-xs text-muted-foreground">{n.source}</span>
+                <span className="flex-1 group-hover:text-primary">{n.zh || n.title}</span>
+                <ExternalLink className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground/0 group-hover:text-primary/60" />
+              </a>
+            ))}
+          </div>
+        )}
+      </GlassCard>
 
       <Disclaimer />
     </div>

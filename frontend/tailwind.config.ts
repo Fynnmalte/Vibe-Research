@@ -22,11 +22,13 @@ export default {
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
         mono: ["JetBrains Mono", "ui-monospace", "monospace"],
+        head: ['"Iowan Old Style"', '"Palatino Linotype"', "Palatino", "Georgia", "serif"],
       },
-      borderRadius: { lg: "var(--radius)", md: "calc(var(--radius) - 4px)", sm: "calc(var(--radius) - 8px)" },
+      borderRadius: { lg: "var(--radius)", md: "calc(var(--radius) - 2px)", sm: "calc(var(--radius) - 4px)" },
       boxShadow: {
-        glass: "0 12px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06)",
-        glow: "0 0 0 1px hsl(var(--primary) / .25), 0 0 24px hsl(var(--primary) / .18)",
+        // ruhig: kein Glow mehr. „glow"/„glass" bleiben als Namen, sind aber neutralisiert.
+        glass: "none",
+        glow: "none",
       },
     },
   },

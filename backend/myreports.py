@@ -34,15 +34,15 @@ ALLOWED_EXT = {
 
 # 文件名关键词 → 行业标签（顺序即优先级，先命中先用）。纯文件名匹配、零依赖、离线可用。
 _INDUSTRY_KEYWORDS: list[tuple[str, list[str]]] = [
-    ("人形机器人", ["人形", "机器人", "humanoid", "谐波", "丝杠", "滚柱", "灵巧手", "减速器", "optimus", "宇树", "特斯拉"]),
-    ("光互联", ["光互联", "硅光", "cpo", "光模块", "磷化铟", "inp", "光芯片", "源杰", "中际旭创", "天孚"]),
-    ("HBM存储", ["hbm", "存储", "内存", "dram", "长鑫", "美光", "海力士", "颗粒", "闪存", "nand"]),
-    ("AI算力", ["算力", "gpu", "英伟达", "nvidia", "服务器", "液冷", "pcb", "交换机", "cowos", "沪电", "工业富联"]),
-    ("半导体", ["半导体", "芯片", "晶圆", "光刻", "封测", "台积电", "刻蚀", "存储芯片"]),
-    ("新能源", ["锂电", "电池", "光伏", "储能", "固态", "钠电", "宁德", "比亚迪"]),
-    ("创新药", ["创新药", "医药", "生物", "cxo", "临床", "adc", "glp", "药明"]),
-    ("商业航天", ["航天", "卫星", "火箭", "星链", "starlink", "spacex", "蓝箭"]),
-    ("电力电网", ["电力", "电网", "特高压", "变压器", "输配电", "燃气轮机"]),
+    ("Humanoide Roboter", ["人形", "机器人", "humanoid", "谐波", "丝杠", "滚柱", "灵巧手", "减速器", "optimus", "宇树", "特斯拉", "roboter", "tesla"]),
+    ("Optische Vernetzung", ["光互联", "硅光", "cpo", "光模块", "磷化铟", "inp", "光芯片", "源杰", "中际旭创", "天孚", "optical", "silicon photonics"]),
+    ("HBM-Speicher", ["hbm", "存储", "内存", "dram", "长鑫", "美光", "海力士", "颗粒", "闪存", "nand", "memory", "micron"]),
+    ("KI-Rechenleistung", ["算力", "gpu", "英伟达", "nvidia", "服务器", "液冷", "pcb", "交换机", "cowos", "沪电", "工业富联", "server", "compute"]),
+    ("Halbleiter", ["半导体", "芯片", "晶圆", "光刻", "封测", "台积电", "刻蚀", "存储芯片", "semiconductor", "chip", "wafer", "tsmc"]),
+    ("Neue Energie", ["锂电", "电池", "光伏", "储能", "固态", "钠电", "宁德", "比亚迪", "battery", "solar", "byd"]),
+    ("Innovative Medikamente", ["创新药", "医药", "生物", "cxo", "临床", "adc", "glp", "药明", "pharma", "biotech"]),
+    ("Kommerzielle Raumfahrt", ["航天", "卫星", "火箭", "星链", "starlink", "spacex", "蓝箭", "satellite", "rocket", "space"]),
+    ("Stromnetz", ["电力", "电网", "特高压", "变压器", "输配电", "燃气轮机", "grid", "power"]),
 ]
 
 
@@ -77,13 +77,13 @@ def classify(filename: str) -> str:
     for industry, kws in _INDUSTRY_KEYWORDS:
         if any(kw.lower() in low for kw in kws):
             return industry
-    return "未分类"
+    return "Nicht kategorisiert"
 
 
 def _sanitize_name(name: str) -> str:
     """只保留基名，去掉路径分隔符；空名给个兜底。"""
     base = os.path.basename((name or "").replace("\\", "/")).strip()
-    return base or "未命名"
+    return base or "Unbenannt"
 
 
 def list_reports() -> list[dict]:

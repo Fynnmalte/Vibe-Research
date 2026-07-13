@@ -1,12 +1,18 @@
-// 关注股票（自选股）—— 只存本地 localStorage，不上传、不进仓库。
-// 行情复用 /api/quote；复盘时把关注股行情一并喂给用户自己的 AI。
+// Watchlist (beobachtete Aktien) — nur in lokalem localStorage, kein Upload, nicht im Repository.
+// Kurse über /api/w/quote (Yahoo); beim Rückblick werden die Watchlist-Kurse mit an die eigene KI des Nutzers gegeben.
 
 const KEY = "vr-watchlist";
+
+// Yahoo-Schreibweise: AAPL (US), SAP.DE (Xetra), 0700.HK (Hongkong), BRK-B (Klasse B), ^GDAXI (Index).
+// Bewusst permissiv — was Yahoo nicht kennt, fällt beim Abruf einfach raus.
+const SYMBOL = /^[A-Z0-9^][A-Z0-9.\-]{0,11}$/;
+
+const normalize = (s: string) => s.trim().toUpperCase();
 
 export function loadWatch(): string[] {
   try {
     const v = JSON.parse(localStorage.getItem(KEY) || "[]");
-    return Array.isArray(v) ? v.filter((c) => /^\d{6}$/.test(c)) : [];
+    return Array.isArray(v) ? v.map(normalize).filter((c) => SYMBOL.test(c)) : [];
   } catch {
     return [];
   }
@@ -16,13 +22,13 @@ export function saveWatch(codes: string[]) {
   localStorage.setItem(KEY, JSON.stringify(codes));
 }
 
-// 从任意文本里抽取 6 位 A 股代码（逗号 / 空格 / 换行 / 顿号分隔都行，方便一次粘贴一串）。
+// Extrahiert Symbole aus beliebigem Text (Komma / Leerzeichen / Zeilenumbruch getrennt).
 export function parseCodes(raw: string): string[] {
-  const tokens = raw.split(/[^\d]+/).filter(Boolean);
-  return Array.from(new Set(tokens.filter((t) => /^\d{6}$/.test(t))));
+  const tokens = raw.split(/[,;\s]+/).map(normalize).filter(Boolean);
+  return Array.from(new Set(tokens.filter((t) => SYMBOL.test(t))));
 }
 
-// 把用户输入的一串代码并入已有自选，返回去重后的新列表 + 实际新增数量。
+// Fügt eine Reihe eingegebener Symbole zur bestehenden Watchlist hinzu, gibt die deduplizierte neue Liste + tatsächliche Anzahl neuer Einträge zurück.
 export function addCodes(existing: string[], raw: string): { next: string[]; added: number } {
   const incoming = parseCodes(raw).filter((c) => !existing.includes(c));
   return { next: [...existing, ...incoming], added: incoming.length };

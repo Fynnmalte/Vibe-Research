@@ -1,10 +1,14 @@
-# 核心（轻量、秒装）——行情 + 研报即刻可用
+# Kern (leicht, sofort einsatzbereit) — Kurse, Suche, Portfolio, KI, Thesis
 fastapi>=0.110
 uvicorn[standard]>=0.29
 requests
+tzdata  # Börsen-Handelszeit (zoneinfo) — falls das OS keine Zeitzonendaten mitbringt
 
-# 全栈数据源（较重）——一致预期 / 新闻 / 公告 / K线 / 财务
-# 未安装时对应端点会返回 501 + 安装提示，不影响行情/研报
-akshare>=1.10
-mootdx>=0.10
+# Quant-Analyse (technische Indikatoren + Faktor-Scorecard)
+numpy
 pandas
+ta>=0.11
+
+# Alt: A-Aktien-Datenquellen (Eastmoney/akshare) — nur nötig für den Legacy-A-Aktien-Pfad
+# akshare>=1.10
+# mootdx>=0.10

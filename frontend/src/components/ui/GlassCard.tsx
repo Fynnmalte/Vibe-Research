@@ -8,7 +8,7 @@ interface Props {
   onClick?: () => void;
 }
 
-// 玻璃卡：半透明填充 + 发丝边框 + 柔投影 + 顶部内高光（科技玻璃暖橙风的基础容器）。
+// Glaskarte: halbtransparente Füllung + feine Umrandung + weicher Schatten + oberes Innen-Highlight (Basis-Container im Tech-Glas-Warmorange-Stil).
 export function GlassCard({ children, className, glow, onClick }: Props) {
   return (
     <div

@@ -123,6 +123,39 @@ cd frontend && npm install && npm run dev
 # 浏览器打开 http://localhost:5899
 ```
 
+---
+
+### 🇩🇪 Schnellstart (dieser Fork · macOS, Dauerbetrieb ohne API-Key)
+
+Dieser Fork läuft als **ein** Hintergrunddienst und braucht **keinen API-Key** — die
+Kursdaten kommen per Fallback-Kette (CNBC gratis → Yahoo), ein RapidAPI-Key ist nur
+optional für stabilere Daten.
+
+```bash
+# Einmalig: Abhängigkeiten
+cd backend && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt && cd ..
+cd frontend && npm install && cd ..
+
+# Als macOS-Hintergrunddienst einrichten (baut das Frontend + startet bei jedem Login)
+./autostart.sh install
+# → läuft dauerhaft auf http://127.0.0.1:8900
+```
+
+Danach `http://127.0.0.1:8900` im Browser öffnen und über **„Zum Dock hinzufügen"**
+(Safari: Ablage · Chrome: Installieren-Symbol in der Adressleiste) als App installieren —
+eigenes Fenster, Dock-Icon, kein Terminal mehr nötig.
+
+| Befehl | Zweck |
+|---|---|
+| `./autostart.sh install` | Dienst einrichten (Autostart bei Login) |
+| `./autostart.sh update` | nach `git pull` / Codeänderung: neu bauen + neu starten |
+| `./autostart.sh status` | läuft er? + Health-Check |
+| `./autostart.sh uninstall` | Dienst entfernen (danach wieder Dev-Modus via `./start.sh`) |
+
+**Optional** — stabilere Kursdaten mit eigenem (kostenlosem) RapidAPI-Key: `.env` aus
+[`.env.example`](.env.example) anlegen und `YH_RAPIDAPI_KEY` eintragen. Ohne Key läuft alles
+trotzdem über die Gratis-Quellen.
+
 ## 🔌 接入 AI
 
 在「接入 AI」页配置一次，全站的「问 AI / 复盘 / 今日要点」就都用你自己的模型。**分析都由你的模型给出，本产品不校准、无倾向。** 三种方式：

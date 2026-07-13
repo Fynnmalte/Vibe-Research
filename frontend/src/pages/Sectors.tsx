@@ -12,8 +12,8 @@ export function Sectors() {
   return (
     <div>
       <PageHeader
-        title="板块中心"
-        subtitle={`${sectors.length} 个热门赛道的产业链骨架 · 只有环节，不含标的`}
+        title="Sektoren"
+        subtitle={`Wertschöpfungsketten-Gerüst von ${sectors.length} gefragten Sektoren · nur Glieder, keine Titel`}
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -25,7 +25,7 @@ export function Sectors() {
                   <h3 className="text-base font-bold">{s.label}</h3>
                   {s.hot && (
                     <span className="inline-flex items-center gap-0.5 rounded-full bg-accent/15 px-1.5 py-0.5 text-[10px] font-medium text-accent">
-                      <Flame className="h-3 w-3" /> 热门
+                      <Flame className="h-3 w-3" /> Gefragt
                     </span>
                   )}
                 </div>
@@ -33,7 +33,7 @@ export function Sectors() {
               </div>
               <div className="mt-3 flex items-center justify-between border-t border-border/50 pt-3 text-xs">
                 <span className="text-muted-foreground">
-                  {s.verified ? `${s.nodes.length} 个环节` : "环节梳理中"}
+                  {s.verified ? `${s.nodes.length} Glieder` : "Glieder in Aufbereitung"}
                 </span>
                 <ChevronRight className="h-4 w-4 text-primary" />
               </div>
@@ -43,7 +43,7 @@ export function Sectors() {
       </div>
 
       <p className="mt-4 text-center text-xs text-muted-foreground/60">
-        共 {sectors.length} 个板块，其中 {hotCount} 个热门 · 环节持续实时核实补全
+        Insgesamt {sectors.length} Sektoren, davon {hotCount} gefragt · Glieder werden laufend per Echtzeit verifiziert
       </p>
       <Disclaimer />
     </div>

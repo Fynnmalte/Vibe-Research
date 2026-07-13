@@ -13,6 +13,7 @@ import json
 import os
 import re
 import urllib.request
+import requests
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone, timedelta
@@ -56,12 +57,12 @@ def _parse_dt(s: str):
 def _fetch_source(src: dict, per: int, cutoff, redline: list[str]):
     """抓单个 RSS 源；返回 items 列表，出错返回 None。"""
     try:
-        req = urllib.request.Request(src["url"], headers={
+        # requests statt urllib: bringt certifi mit → keine SSL-Zertifikatsfehler auf macOS
+        resp = requests.get(src["url"], headers={
             "User-Agent": UA,
             "Accept": "application/rss+xml,application/atom+xml,application/xml,text/xml,*/*",
-        })
-        with urllib.request.urlopen(req, timeout=14) as r:
-            raw = r.read()
+        }, timeout=14)
+        raw = resp.content
         root = ET.fromstring(raw)
         out = []
         for n in [e for e in root.iter() if _local(e.tag) in ("item", "entry")]:

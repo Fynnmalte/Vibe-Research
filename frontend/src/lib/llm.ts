@@ -1,12 +1,12 @@
-// 用户 LLM 配置（只存本地 localStorage，不上传、不进仓库）+ 系统 AI 对话调用。
+// Nutzer-LLM-Konfiguration (nur in lokalem localStorage, kein Upload, nicht im Repository) + System-KI-Dialogaufrufe.
 
 import { ApiError, authHeaders } from "./api";
 import { isCliProvider, type ProviderId } from "./ai-models";
 
 export interface LlmConfig {
   provider: ProviderId;
-  baseURL: string; // CLI 订阅时留空
-  apiKey: string;  // CLI 订阅时留空
+  baseURL: string; // bei CLI-Abo leer lassen
+  apiKey: string;  // bei CLI-Abo leer lassen
   model: string;
 }
 
@@ -28,7 +28,7 @@ export function loadLlm(): LlmConfig | null {
     const raw = localStorage.getItem(KEY);
     if (!raw) return null;
     const c = JSON.parse(raw) as LlmConfig;
-    // 订阅(CLI)：有 model 即可，免 key；API：需 baseURL + key + model。
+    // Abo (CLI): model reicht, ohne Key; API: braucht baseURL + Key + model.
     const ok = c.model && (isCliProvider(c.provider) || (c.baseURL && c.apiKey));
     return ok ? c : null;
   } catch {
@@ -49,16 +49,16 @@ export function hasLlm(): boolean {
 }
 
 export interface ChatHandlers {
-  onDelta?: (text: string) => void;             // 答案逐块吐字
-  onTool?: (tool: string, args: Record<string, unknown>) => void; // AI 调了某数据工具
+  onDelta?: (text: string) => void;             // Antwort blockweise streamen
+  onTool?: (tool: string, args: Record<string, unknown>) => void; // KI hat ein Datentool aufgerufen
 }
 
-// 流式调后端 /api/chat（NDJSON：每行一个事件 {type: tool|delta|done|error}）。
-// 边流边回调 onDelta/onTool；返回累积的最终 {content, trace, rounds}。
-// signal：调用方可传 AbortController.signal，用户关面板/换问题时中止请求（省订阅/API 额度）。
+// Backend /api/chat streamend aufrufen (NDJSON: ein Event pro Zeile {type: tool|delta|done|error}).
+// Streamt und ruft onDelta/onTool auf; gibt das kumulierte finale {content, trace, rounds} zurück.
+// signal: Aufrufer kann AbortController.signal übergeben, um beim Schließen/Frage-Wechsel abzubrechen (spart Abo/API-Kontingent).
 export async function chatStream(messages: ChatMsg[], context: string, handlers: ChatHandlers = {}, signal?: AbortSignal): Promise<ChatResult> {
   const llm = loadLlm();
-  if (!llm) throw new ApiError("尚未接入 AI，请先在「接入 AI」里配置", 400);
+  if (!llm) throw new ApiError("Noch keine KI verbunden, bitte zuerst unter »KI verbinden« konfigurieren", 400);
 
   let resp: Response;
   try {
@@ -69,19 +69,19 @@ export async function chatStream(messages: ChatMsg[], context: string, handlers:
       signal,
     });
   } catch (e) {
-    if (e instanceof DOMException && e.name === "AbortError") throw e; // 主动中止，原样抛给调用方
-    throw new ApiError("连接不到后端，请先启动 backend（uvicorn app:app --port 8900）", 0);
+    if (e instanceof DOMException && e.name === "AbortError") throw e; // bewusster Abbruch, unverändert an Aufrufer werfen
+    throw new ApiError("Keine Verbindung zum Backend, bitte zuerst das Backend starten (uvicorn app:app --port 8900)", 0);
   }
-  // 配置错误（缺 key / 未装 CLI）在流开始前以 HTTP 400 返回
+  // Konfigurationsfehler (fehlender Key / CLI nicht installiert) werden vor Streambeginn als HTTP 400 zurückgegeben
   if (!resp.ok) {
     let body: any = null;
     try { body = await resp.json(); } catch { /* ignore */ }
     if (resp.status === 401) {
-      throw new ApiError("后端开启了访问鉴权（VR_API_KEY）：请在「接入 AI」页底部填写后端访问密钥", 401);
+      throw new ApiError("Das Backend hat Zugriffs-Auth aktiviert (VR_API_KEY): bitte unten auf der Seite »KI verbinden« den Backend-Zugriffsschlüssel eintragen", 401);
     }
     throw new ApiError(body?.detail || `HTTP ${resp.status}`, resp.status);
   }
-  if (!resp.body) throw new ApiError("后端无响应流", 502);
+  if (!resp.body) throw new ApiError("Kein Antwort-Stream vom Backend", 502);
 
   const reader = resp.body.getReader();
   const decoder = new TextDecoder();
@@ -112,7 +112,7 @@ export async function chatStream(messages: ChatMsg[], context: string, handlers:
   return { content, trace, rounds };
 }
 
-// 非流式便捷包装（不需要逐字 UI 的调用方用它）。
+// Nicht-streamende Convenience-Hülle (für Aufrufer ohne zeichenweise UI).
 export function chat(messages: ChatMsg[], context: string): Promise<ChatResult> {
   return chatStream(messages, context);
 }

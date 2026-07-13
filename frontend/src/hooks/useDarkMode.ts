@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 
-// 默认呈现暗色暖橙；用户可切亮色，选择存 localStorage。
-// 机制：亮色时给 <html> 加 .light（暗色为无类名的默认态）。
+// Standard: dunkles Warmorange; Nutzer kann auf hell umschalten, die Wahl wird in localStorage gespeichert.
+// Mechanismus: im Hellmodus bekommt <html> die Klasse .light (dunkel ist der Standard ohne Klasse).
 export function useDarkMode() {
   const [dark, setDark] = useState(() => {
     const saved = localStorage.getItem("vr-theme");
     if (saved) return saved === "dark";
-    return true; // 默认暗色
+    return true; // Standard dunkel
   });
 
   useEffect(() => {

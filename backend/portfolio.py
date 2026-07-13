@@ -13,7 +13,7 @@ import threading
 import time
 from datetime import datetime, timezone, timedelta
 
-import astock
+import wstock
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CACHE_DIR = os.path.join(HERE, ".cache")
@@ -74,7 +74,7 @@ def close_position(code: str, date: str, price: float, shares: float, cost: floa
         d = _load()
         d.setdefault("closed", [])
         try:
-            name = astock.tencent_quote([code]).get(code, {}).get("name", code)
+            name = wstock.quotes([code]).get(code, {}).get("name", code)
         except Exception:
             name = code
         d["closed"].append({
@@ -104,18 +104,19 @@ def get_portfolio() -> dict:
     rows, tmv, tcost = [], 0.0, 0.0
     if hs:
         try:
-            quotes = astock.tencent_quote([h["code"] for h in hs])
+            quotes = wstock.quotes([h["code"] for h in hs])
         except Exception:
             quotes = {}
         for h in hs:
             q = quotes.get(h["code"], {})
-            price = q.get("price", 0.0)
+            price = q.get("price") or 0.0
             mv = price * h["shares"]
             cv = h["cost"] * h["shares"]
             pnl = mv - cv
             rows.append({
                 "code": h["code"], "name": q.get("name", h["code"]),
                 "price": price, "shares": h["shares"], "cost": h["cost"],
+                "currency": q.get("currency"),
                 "market_value": round(mv, 2), "pnl": round(pnl, 2),
                 "pnl_pct": round(pnl / cv * 100, 2) if cv else 0.0,
             })
