@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { BarChart3, Loader2, AlertCircle, Star, StarOff } from "lucide-react";
+import { BarChart3, Loader2, AlertCircle, Star, StarOff, Briefcase, Check } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { AskAiButton } from "@/components/ui/AskAiButton";
@@ -44,6 +44,11 @@ export function StockData() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [inWatch, setInWatch] = useState(false);
+  // Schnell-Kauf ins Musterdepot (zum aktuellen Kurs)
+  const [depotOpen, setDepotOpen] = useState(false);
+  const [depotQty, setDepotQty] = useState("10");
+  const [depotBusy, setDepotBusy] = useState(false);
+  const [depotDone, setDepotDone] = useState(false);
   const [thesisCtx, setThesisCtx] = useState("");
   const [quantCtx, setQuantCtx] = useState("");
   const [fundCtx, setFundCtx] = useState("");
@@ -84,6 +89,21 @@ export function StockData() {
       setInWatch(true);
     }
     saveWatch(next);
+  };
+
+  // Schnell-Kauf: aktuelles Symbol zum Marktkurs (Einstand 0 → Backend nimmt Live-Kurs) ins Depot.
+  const buyToDepot = async () => {
+    if (!data) return;
+    const qty = parseFloat(depotQty);
+    if (!(qty > 0)) return;
+    setDepotBusy(true);
+    try {
+      await api.addHolding(data.symbol, qty, 0);
+      setDepotDone(true);
+      setDepotOpen(false);
+      setTimeout(() => setDepotDone(false), 2500);
+    } catch { /* Fehler still — Kurs evtl. nicht abrufbar */ }
+    finally { setDepotBusy(false); }
   };
 
   const r52 = data ? range52(data) : null;
@@ -134,12 +154,32 @@ export function StockData() {
               <h2 className="text-xl font-bold">{data.name}</h2>
               <span className="font-mono text-sm text-muted-foreground">{data.symbol}</span>
               {data.exchange && <span className="rounded bg-primary/15 px-1.5 py-0.5 text-[10px] text-primary">{data.exchange}</span>}
-              <button
-                onClick={toggleWatch}
-                className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-primary"
-              >
-                {inWatch ? <><Star className="h-3.5 w-3.5 fill-primary text-primary" /> In Watchlist</> : <><StarOff className="h-3.5 w-3.5" /> Zur Watchlist</>}
-              </button>
+              <div className="ml-auto flex items-center gap-2">
+                {depotOpen ? (
+                  <div className="flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/5 px-2 py-1">
+                    <input value={depotQty} onChange={(e) => setDepotQty(e.target.value.replace(/[^\d.]/g, ""))}
+                      className="w-16 rounded border border-border bg-black/20 px-2 py-1 text-xs outline-none focus:border-primary/50"
+                      placeholder="Stück" autoFocus />
+                    <span className="text-[11px] text-muted-foreground">Stk. zu {fmt(data.price)}</span>
+                    <button onClick={buyToDepot} disabled={depotBusy}
+                      className="inline-flex items-center gap-1 rounded bg-primary/20 px-2 py-1 text-xs font-medium text-primary hover:bg-primary/30 disabled:opacity-50">
+                      {depotBusy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />} Kaufen
+                    </button>
+                    <button onClick={() => setDepotOpen(false)} className="px-1 text-xs text-muted-foreground/60 hover:text-foreground">✕</button>
+                  </div>
+                ) : (
+                  <button onClick={() => setDepotOpen(true)}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-primary">
+                    {depotDone ? <><Check className="h-3.5 w-3.5 text-success" /> Ins Depot ✓</> : <><Briefcase className="h-3.5 w-3.5" /> Ins Depot</>}
+                  </button>
+                )}
+                <button
+                  onClick={toggleWatch}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-primary"
+                >
+                  {inWatch ? <><Star className="h-3.5 w-3.5 fill-primary text-primary" /> In Watchlist</> : <><StarOff className="h-3.5 w-3.5" /> Zur Watchlist</>}
+                </button>
+              </div>
             </div>
 
             <div className="mb-4 flex items-baseline gap-3">

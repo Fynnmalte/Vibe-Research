@@ -4,8 +4,15 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { AskAiButton } from "@/components/ui/AskAiButton";
 import { Disclaimer } from "@/components/ui/Disclaimer";
-import { api, ApiError, type PortfolioData } from "@/lib/api";
+import { api, ApiError, type PortfolioData, type WStrategy } from "@/lib/api";
 import { cn } from "@/lib/utils";
+
+// Strategie-Signal → kompaktes Label + Farbe (aus dem Faktor-Modell)
+const SIGNAL: Record<string, { label: string; cls: string }> = {
+  long: { label: "Long", cls: "text-success border-success/40 bg-success/10" },
+  short: { label: "Short", cls: "text-danger border-danger/40 bg-danger/10" },
+  neutral: { label: "Neutral", cls: "text-muted-foreground border-border bg-muted/20" },
+};
 
 const REFRESH_MS = 30 * 60 * 1000; // alle 30 Minuten automatisch aktualisieren
 const SYMBOL = /^[A-Z0-9^][A-Z0-9.\-]{0,11}$/;
@@ -28,6 +35,8 @@ export function Portfolio() {
   const [cShares, setCShares] = useState("");
   const [cCost, setCCost] = useState("");
   const [closing, setClosing] = useState(false);
+  // Strategie-Signal je Position (Faktor-Modell), lazy geladen
+  const [signals, setSignals] = useState<Record<string, WStrategy>>({});
 
   const load = useCallback(async (manual = false) => {
     if (manual) setRefreshing(true);
@@ -47,10 +56,25 @@ export function Portfolio() {
     return () => clearInterval(t);
   }, [load]);
 
+  // Strategie-Signal je gehaltene Position nachladen (Faktor-Modell). Einmal pro Code.
+  useEffect(() => {
+    const codes = (data?.holdings || []).map((h) => h.code);
+    codes.forEach((c) => {
+      if (signals[c]) return;
+      api.wStrategy(c)
+        .then((s) => setSignals((prev) => ({ ...prev, [c]: s })))
+        .catch(() => setSignals((prev) => ({ ...prev, [c]: { available: false } })));
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data?.holdings]);
+
   const add = async () => {
     if (!SYMBOL.test(code.trim())) { setErr("Symbol eingeben, z.B. AAPL, SAP.DE, 0700.HK"); return; }
-    const s = parseFloat(shares), c = parseFloat(cost);
-    if (!(s > 0) || !Number.isFinite(c)) { setErr("Stückzahl muss > 0 sein, Einstandspreis als Zahl (auch negativ möglich)"); return; }
+    const s = parseFloat(shares);
+    if (!(s > 0)) { setErr("Stückzahl muss > 0 sein"); return; }
+    // Einstandspreis leer = Musterdepot-Kauf zum aktuellen Kurs (Backend füllt ihn).
+    const c = cost.trim() === "" ? 0 : parseFloat(cost);
+    if (cost.trim() !== "" && !Number.isFinite(c)) { setErr("Einstandspreis als Zahl (oder leer = aktueller Kurs)"); return; }
     setAdding(true); setErr(null);
     try {
       setData(await api.addHolding(code.trim(), s, c));
@@ -152,16 +176,16 @@ export function Portfolio() {
               className="w-28 rounded-lg border border-border bg-black/20 px-3 py-2 text-sm outline-none focus:border-primary/50" />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-muted-foreground">Einstandspreis</label>
-            <input value={cost} onChange={(e) => setCost(e.target.value.replace(/[^\d.-]/g, "").replace(/(?!^)-/g, ""))} placeholder="z.B. 12.5, auch negativ"
-              className="w-28 rounded-lg border border-border bg-black/20 px-3 py-2 text-sm outline-none focus:border-primary/50" />
+            <label className="mb-1 block text-xs text-muted-foreground">Einstand <span className="text-muted-foreground/50">· leer = Kurs</span></label>
+            <input value={cost} onChange={(e) => setCost(e.target.value.replace(/[^\d.-]/g, "").replace(/(?!^)-/g, ""))} placeholder="leer = aktueller Kurs"
+              className="w-36 rounded-lg border border-border bg-black/20 px-3 py-2 text-sm outline-none focus:border-primary/50" />
           </div>
           <button onClick={add} disabled={adding}
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary/15 px-4 py-2 text-sm font-medium text-primary shadow-glow hover:bg-primary/25 disabled:opacity-50">
-            {adding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Hinzufügen
+            {adding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Ins Depot
           </button>
         </div>
-        <p className="mt-2 text-[11px] text-muted-foreground/60">Ein erneutes Hinzufügen desselben Codes wird per gewichtetem Durchschnitts-Einstand zusammengeführt (Aufstockung).</p>
+        <p className="mt-2 text-[11px] text-muted-foreground/60">Einstandspreis leer lassen = <b className="text-foreground/70">Musterdepot-Kauf zum aktuellen Kurs</b>. Gleicher Code erneut = gewichteter Durchschnitts-Einstand (Aufstockung).</p>
       </GlassCard>
 
       {err && (
@@ -183,7 +207,7 @@ export function Portfolio() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border/50 text-left text-xs text-muted-foreground">
-                  {["Name", "Kurs", "Stück", "Einstand", "Marktwert", "Gewinn/Verlust", "G/V%", ""].map((h) => (
+                  {["Name", "Kurs", "Stück", "Einstand", "Marktwert", "Gewinn/Verlust", "G/V%", "App-Signal", ""].map((h) => (
                     <th key={h} className="whitespace-nowrap px-2 py-2 font-medium">{h}</th>
                   ))}
                 </tr>
@@ -201,6 +225,20 @@ export function Portfolio() {
                     <td className="px-2 py-2.5 font-mono">{fmt(h.market_value)}</td>
                     <td className={cn("px-2 py-2.5 font-mono", pnlColor(h.pnl))}>{h.pnl > 0 ? "+" : ""}{fmt(h.pnl)}</td>
                     <td className={cn("px-2 py-2.5 font-mono", pnlColor(h.pnl))}>{h.pnl_pct > 0 ? "+" : ""}{h.pnl_pct}%</td>
+                    <td className="px-2 py-2.5">
+                      {(() => {
+                        const sg = signals[h.code];
+                        if (!sg) return <span className="text-xs text-muted-foreground/40">…</span>;
+                        if (!sg.available || !sg.signal) return <span className="text-xs text-muted-foreground/40">—</span>;
+                        const m = SIGNAL[sg.signal];
+                        return (
+                          <span className={cn("inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium", m.cls)}
+                            title={`${sg.archetype ?? ""} · Überzeugung ${sg.conviction ?? "—"}/100`}>
+                            {m.label}
+                          </span>
+                        );
+                      })()}
+                    </td>
                     <td className="px-2 py-2.5">
                       <button onClick={() => remove(h.code)} className="text-muted-foreground/50 hover:text-destructive" title="Löschen">
                         <Trash2 className="h-3.5 w-3.5" />

@@ -136,7 +136,7 @@ def chat(req: ChatReq):
 class HoldingIn(BaseModel):
     code: str
     shares: float
-    cost: float
+    cost: float = 0.0   # 0/weggelassen = Kauf zum aktuellen Kurs (Musterdepot)
 
 
 @app.get("/api/portfolio")
@@ -156,7 +156,13 @@ def portfolio_add(h: HoldingIn):
         raise HTTPException(400, "Ungültiges Symbol (z.B. AAPL, SAP.DE, 0700.HK)")
     if h.shares <= 0:
         raise HTTPException(400, "Stückzahl muss größer 0 sein")
-    return {"data": pf.add_holding(code, h.shares, h.cost)}
+    cost = h.cost
+    if cost <= 0:   # Musterdepot: kein Einstandspreis angegeben → zum aktuellen Kurs kaufen
+        q = wstock.quotes([code]).get(code, {})
+        cost = q.get("price") or 0.0
+        if cost <= 0:
+            raise HTTPException(400, "Aktueller Kurs nicht verfügbar — bitte Einstandspreis angeben")
+    return {"data": pf.add_holding(code, h.shares, cost)}
 
 
 @app.delete("/api/portfolio/holding")
