@@ -13,6 +13,7 @@ Compliance: nur objektive Schwellen-/Zustandsänderungen, keine Empfehlung.
 
 from __future__ import annotations
 
+import html
 import json
 import os
 from datetime import datetime, date
@@ -107,11 +108,13 @@ def run_once() -> dict:
 
     sent = False
     if all_alerts:
+        # Telegram parse_mode=HTML: dynamische Texte escapen (Thesen enthalten < / >,
+        # z.B. „KGV < 28" — sonst 400 „can't parse entities"). Die <b>-Tags sind bewusst.
         parts = [f"<b>Vibe-Research · {len(all_alerts)} Aktie(n) mit Neuigkeiten</b>"]
         for sym, lines in all_alerts.items():
-            name = (book.get(sym, {}) or {}).get("symbol", sym)
+            name = html.escape((book.get(sym, {}) or {}).get("symbol", sym))
             parts.append(f"\n<b>{name}</b>")
-            parts.extend(lines)
+            parts.extend(html.escape(ln) for ln in lines)
         sent = notify.send("\n".join(parts))
 
     return {
