@@ -42,6 +42,21 @@ Quellen (CNBC / Nasdaq); eigene Keys (RapidAPI, FMP) sind optional für Zusatzfe
 **Dieser Fork läuft als ein Hintergrunddienst und braucht keinen API-Key.** Die Kursdaten
 kommen über eine Fallback-Kette (CNBC gratis → Yahoo); eigene Keys sind optional.
 
+### Docker (jedes OS — nichts außer Docker nötig)
+
+Kein Python, kein Node lokal installieren — ein Container bündelt alles:
+
+```bash
+cp .env.example .env      # einmalig; leere Keys sind ok (App läuft über CNBC)
+docker compose up -d      # baut + startet → http://localhost:8900
+docker compose down       # stoppen
+```
+
+Deine Daten (Portfolio / Notizen / Analysen) liegen im Ordner `./data` und überleben
+Neustarts. **Hinweis:** Im Container geht nur die **API-Verbindung** für die KI (eigener Key
+in „KI verbinden") — die Abo-CLI (lokales `claude`) sieht der Container nicht. Für den
+Abo-Modus nativ per `./autostart.sh` laufen.
+
 ### macOS — Dauerbetrieb (empfohlen)
 
 ```bash

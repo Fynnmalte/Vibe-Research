@@ -1,0 +1,13 @@
+# Build-Kontext schlank halten — nichts davon gehört ins Image.
+.git
+**/.venv
+**/node_modules
+**/dist
+**/.cache
+data
+*.log
+.env
+.DS_Store
+docs/screenshots
+a-stock-data
+global-stock-data

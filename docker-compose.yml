@@ -1,0 +1,27 @@
+# Vibe-Research in einem Container starten:
+#   cp .env.example .env      (einmalig — leere Keys sind ok, App läuft über CNBC)
+#   docker compose up -d      → http://localhost:8900
+#   docker compose down       → stoppen
+#
+# Deine Daten (Portfolio/Notizen) liegen im Ordner ./data und überleben Neustarts.
+
+services:
+  vibe-research:
+    build: .
+    image: vibe-research:local
+    container_name: vibe-research
+    ports:
+      - "8900:8900"
+    # Nutzerdaten persistent auf dem Host
+    volumes:
+      - ./data:/app/backend/.cache
+    # Optionale Keys (YH_RAPIDAPI_KEY / FMP_API_KEY / TELEGRAM_*). .env muss existieren.
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8900/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
