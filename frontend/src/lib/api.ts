@@ -337,7 +337,6 @@ export interface WStockDetail {
 
 export const api = {
   health: () => get<{ ok: boolean }>("/health"),
-  indices: () => get<IndexQuote[]>("/indices"),
 
   // US / EU / HK
   wIndices: () => get<WIndex[]>("/w/indices"),
@@ -367,11 +366,6 @@ export const api = {
   thesisJournal: (symbol: string, kind: string, content: string) =>
     request<Thesis>("/thesis/journal", "POST", { symbol, kind, content }),
   thesisCatalog: () => get<{ metrics: Record<string, string>; ops: string[] }>("/thesis/catalog"),
-  marketOverview: () => get<MarketOverview>("/market/overview"),
-  emotion: () => get<ShortTermEmotion>("/market/emotion"),
-  turnoverTop: () => get<TurnoverTop>("/market/turnover-top"),
-  globalIndices: () => get<GlobalIndex[]>("/global/indices"),
-  globalStock: (symbol: string) => get<GlobalStock>(`/global/stock?symbol=${encodeURIComponent(symbol)}`),
   radar: () => get<RadarData>("/radar"),
   radarRefresh: () => request<RadarData>("/radar/refresh", "POST"),
   portfolio: () => get<PortfolioData>("/portfolio"),
@@ -381,24 +375,7 @@ export const api = {
   closePosition: (code: string, date: string, price: number, shares: number, cost: number) =>
     request<PortfolioData>("/portfolio/close", "POST", { code, date, price, shares, cost }),
   removeClosed: (index: number) => request<PortfolioData>(`/portfolio/close?index=${index}`, "DELETE"),
-  valuation: (code: string) => get<Valuation>(`/valuation?code=${code}`),
-  percentile: (code: string) => get<ValPercentile>(`/valuation/percentile?code=${code}`),
-  financials: (code: string) => get<Financials>(`/financials?code=${code}`),
-  announcements: (code: string) => get<Announcement[]>(`/announcements?code=${code}`),
-  quote: (codes: string) => get<Record<string, Quote>>(`/quote?codes=${codes}`),
-  reports: (code: string) => get<Report[]>(`/reports?code=${code}`),
-  news: (code: string) => get<NewsItem[]>(`/news?code=${code}`),
-  margin: (code: string) => get<MarginRow[]>(`/margin?code=${code}`),
-  blockTrade: (code: string) => get<BlockTradeRow[]>(`/block-trade?code=${code}`),
-  holders: (code: string) => get<HolderRow[]>(`/holders?code=${code}`),
-  dividend: (code: string) => get<DividendRow[]>(`/dividend?code=${code}`),
-  fundFlow: (code: string) => get<FundFlowRow[]>(`/fund-flow?code=${code}`),
-  dragonTiger: (code: string) => get<DragonTiger>(`/dragon-tiger?code=${code}`),
-  lockup: (code: string) => get<Lockup>(`/lockup?code=${code}`),
-  blocks: (code: string) => get<Blocks>(`/blocks?code=${code}`),
-  hotConcepts: (code: string) => get<HotConcept[]>(`/hot-concepts?code=${code}`),
-  investorQa: (code: string) => get<QaRow[]>(`/investor-qa?code=${code}`),
-  industry: (top = 20) => get<IndustryData>(`/industry?top=${top}`),
+  sellPosition: (code: string) => request<PortfolioData>(`/portfolio/sell?code=${encodeURIComponent(code)}`, "POST"),
   myReports: () => get<MyReport[]>("/myreports"),
   uploadReport: (name: string, contentB64: string) =>
     request<MyReport>("/myreports", "POST", { name, content_b64: contentB64 }),

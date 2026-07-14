@@ -1,4 +1,4 @@
-# Vibe-Research · Persönliches KI-Investment-Research (US / EU / HK / A-Aktien)
+# Vibe-Research · Persönliches KI-Investment-Research (US / EU / HK)
 
 [![License: MIT + PolyForm-NC](https://img.shields.io/badge/License-MIT%20%2B%20PolyForm--NC-yellow.svg)](LICENSING.md)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
@@ -8,7 +8,7 @@
 **[Funktionen](#-funktionen) · [Schnellstart](#-schnellstart) · [Datenquellen](#-datenquellen) · [KI verbinden](#-ki-verbinden) · [Architektur](#-architektur) · [Compliance](#-compliance) · [Danksagung](#-danksagung)**
 
 > **Vibe-Research — dein persönlicher Investment-Research-Agent.** Ein sauberes Dashboard für
-> US- / EU- / HK-Aktien (A-Aktien optional), angetrieben von **deiner eigenen KI**.
+> US- / EU- / HK-Aktien, angetrieben von **deiner eigenen KI**.
 
 Vibe-Research legt Kurse, Fundamentaldaten, Bewertung, technische Indikatoren, Backtests,
 Sektoren und Nachrichten in ein aufgeräumtes Dashboard — und lässt dich **dein eigenes
@@ -28,7 +28,7 @@ Quellen (CNBC / Nasdaq); eigene Keys (RapidAPI, FMP) sind optional für Zusatzfe
 | 🔍&nbsp;**Aktiendaten** | Suche (Name / Ticker / ISIN) → Kurs, OHLC, Volumen, Marktkap. · **Kennzahlen** (KGV / Forward-KGV / EPS / 52-Wochen-Spanne) · **Quant-Analyse** (RSI / MACD / SMA / Momentum-Trend-Value-Score) · **Backtesting-Lab** (Regel-Strategien vs. Buy&Hold, 2 Jahre Historie) · **Meine These** (Annahmen gegen Live-Daten prüfen) · **Fundamental & Risiko** (Bewertung / Profitabilität / Verschuldung / Risiko-Ampel) · **Analysten-Runde** (5 KI-Perspektiven debattieren) |
 | ⭐&nbsp;**Watchlist** | Symbole im Stapel einfügen (Komma / Leerzeichen / Zeilenumbruch) · Tabellen-Übersicht · nur lokal gespeichert |
 | 🧩&nbsp;**Sektoren** | Sektor- und Wertschöpfungsketten-Übersicht |
-| 💼&nbsp;**Mein Portfolio** | Positionen erfassen → Live-Gewinn/-Verlust · geschlossene Positionen (nur lokal, kein Upload) |
+| 💼&nbsp;**Musterdepot** | Aktien zum Live-Kurs kaufen (Button „Ins Depot" auf der Aktienseite) · Verkauf zum aktuellen Kurs · Live-G/V + **App-Signal je Position** (Faktor-Modell) · realisierter G/V (nur lokal, kein Upload) |
 | 📄&nbsp;**Meine Analysen** | eigene Research-Dateien hochladen (PDF / Word / txt / Tabellen / Bilder), automatisch nach Branche abgelegt (**nur lokal, kein Upload, nicht im Repository**) |
 | 📝&nbsp;**Notizen** | Rückblicke / Kernpunkte / KI-Antworten lokal ablegen |
 | 🔌&nbsp;**KI verbinden** | Abo (lokale CLI, kein Key) · API (Multi-Modell, baseURL wird automatisch gefüllt) · MCP (an Claude Code o.ä. anbinden) |
@@ -120,15 +120,12 @@ Fallback-Kette, damit die App auch ohne Key funktioniert:
 **Aktiensuche**: RapidAPI (Key) → Yahoo (alle Märkte) → Nasdaq (gratis, US). Direkteingabe
 eines Symbols (`AAPL`, `SAP.DE`, `0700.HK`) funktioniert immer.
 
-Zusätzlich sind drei gebündelte Daten-Engines von [`simonlin1212`](https://github.com/simonlin1212)
-**direkt im Repository** enthalten (`git clone` → sofort nutzbar, kein separater Download):
+**Nachrichten-Radar**: 12 Branchen, 108 öffentliche RSS-Quellen in `backend/newsradar.py` +
+`backend/news_sources.json` (reine Standardbibliothek, kein Key).
 
-- **[`a-stock-data/`](a-stock-data/)** — A-Aktien-Vollstack (10 Ebenen, 40 Endpunkte). Portiert
-  nach `backend/astock.py`. Für Agenten: [`a-stock-data/SKILL.md`](a-stock-data/SKILL.md).
-- **[`global-stock-data/`](global-stock-data/)** — US-/HK-Daten (K-Linie / technische Indikatoren
-  / Optionen / SEC). Ein konformer Teil ist nach `backend/gstock.py` portiert.
-- **investment-news** — 12 Branchen, 108 RSS-Quellen, in `backend/newsradar.py` +
-  `backend/news_sources.json` (reine Standardbibliothek, kein Key).
+> Dieser Fork ist auf **US / EU / HK** ausgerichtet; die A-Aktien-Datenschicht des Originals
+> (`a-stock-data` / `astock.py`) wurde entfernt, da hier ungenutzt. Wer A-Aktien braucht,
+> findet sie im [Upstream von Simon](https://github.com/simonlin1212/Vibe-Research).
 
 > Alle Daten stammen aus öffentlichen Quellen. Vibe-Research zeigt nur Fakten und öffentliche
 > Ranglisten — **keine Aktienempfehlung, keine Kursprognose, keine Kauf/Verkauf-Zeitpunkte**.
@@ -172,19 +169,15 @@ Eine Datenschicht + zwei KI-Ausgänge:
 
 ```
 Vibe-Research/
-├── a-stock-data/       A-Aktien-Datentoolkit (Datenquelle, gebündelt)
-├── global-stock-data/  US-/HK-Datentoolkit (Datenquelle, gebündelt)
 ├── backend/            FastAPI :8900
 │   ├── wstock.py         US/EU/HK-Kurse, Fundamentals, Historie (CNBC/Yahoo/RapidAPI-Kette)
 │   ├── fmp.py            Financial Modeling Prep (optional, US-Fundamentals)
 │   ├── quant.py          technische Indikatoren + Faktor-Scorecard
+│   ├── strategy.py       Positionierung (Multi-Faktor: Value/Quality/Health/Momentum)
 │   ├── backtest.py       Regel-Strategien vs. Buy&Hold
 │   ├── theses.py         „Meine These" — Annahmen gegen Live-Daten
-│   ├── astock.py         A-Aktien-Daten (portiert aus a-stock-data)
-│   ├── gstock.py         US-/HK-Daten (portiert aus global-stock-data)
 │   ├── newsradar.py      Nachrichten-Radar
-│   ├── market.py         Marktstimmung + Sektor-Kapitalfluss + Indizes
-│   ├── portfolio.py      Positionen (lokaler Cache)
+│   ├── portfolio.py      Musterdepot (Kauf/Verkauf zum Kurs, lokaler Cache)
 │   ├── chat.py           System-KI (OpenAI-kompatibles Function-Calling)
 │   ├── cli_runtime.py    Abo-CLI-Anbindung (spawnt lokale CLI)
 │   ├── agent.py          Telegram-Agent (optional)
@@ -212,14 +205,13 @@ cd backend && .venv/bin/pip install -r requirements-dev.txt
 
 ## 🏛 Verwandtes Ökosystem
 
-Die genutzten Daten-Engines stammen aus einem selbst entwickelten Open-Source-System von
+Das Original und die ursprünglichen Daten-Engines stammen von
 [`simonlin1212`](https://github.com/simonlin1212):
 
 | Repository | Rolle |
 |---|---|
-| [**a-stock-data**](https://github.com/simonlin1212/a-stock-data) | A-Aktien-Datentoolkit — A-Aktien-Engine dieses Projekts |
-| [**global-stock-data**](https://github.com/simonlin1212/global-stock-data) | US-/HK-Datentoolkit |
-| [**investment-news**](https://github.com/simonlin1212/investment-news) | globales Branchen-Nachrichten-Dashboard — Nachrichtenquelle |
+| [**Vibe-Research**](https://github.com/simonlin1212/Vibe-Research) | Original (Upstream dieses Forks) — enthält auch die A-Aktien-Datenschicht |
+| [**investment-news**](https://github.com/simonlin1212/investment-news) | Nachrichtenquelle (in `newsradar.py` übernommen) |
 
 ## 🙏 Danksagung
 
@@ -227,8 +219,7 @@ Dieses Projekt ist ein Fork von **[Vibe-Research](https://github.com/simonlin121
 von **Simon** ([simonlin.net](https://www.simonlin.net)), lokalisiert auf Deutsch und um
 keyless Datenquellen (CNBC / Nasdaq / FMP), Markt-Status, Autostart/PWA erweitert.
 
-- A-Aktien-Engine: [a-stock-data](https://github.com/simonlin1212/a-stock-data) (Simonlin1212)
-- US-/HK-Engine: [global-stock-data](https://github.com/simonlin1212/global-stock-data) (Simonlin1212)
+- Original & Datenkonzept: [Vibe-Research](https://github.com/simonlin1212/Vibe-Research) (Simonlin1212)
 - Nachrichten: [investment-news](https://github.com/simonlin1212/investment-news) (Simonlin1212)
 - UI-Designsprache angelehnt an: [HKUDS/Vibe-Trading](https://github.com/HKUDS/Vibe-Trading) (HKUDS · nur UI-Anlehnung, eigenständige Implementierung)
 
