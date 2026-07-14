@@ -33,6 +33,7 @@ import backtest
 import strategy
 import screener
 import altdata
+import scores
 import agent as agent_mod
 import notify
 
@@ -429,6 +430,16 @@ def w_altdata(symbol: str = Query(..., min_length=1, max_length=16)):
         return {"data": altdata.summary(symbol)}
     except Exception as e:  # noqa: BLE001
         raise HTTPException(502, f"Alt-Data nicht verfügbar: {e}") from e
+
+
+@app.get("/api/w/scores")
+def w_scores(symbol: str = Query(..., min_length=1, max_length=16)):
+    """Bilanz-Scores (nur US) aus SEC-XBRL: Piotroski F-Score + Altman Z-Score.
+    Mechanische Kennzahlen, keine Empfehlung."""
+    try:
+        return {"data": scores.analyze(symbol)}
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(502, f"Bilanz-Scores nicht verfügbar: {e}") from e
 
 
 @app.get("/api/sector")

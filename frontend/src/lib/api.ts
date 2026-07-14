@@ -302,6 +302,12 @@ export interface WStrategy {
   bull_points?: string[]; bear_points?: string[];
   disclaimer?: string;
 }
+export interface WScores {
+  available: boolean; symbol?: string; reason?: string;
+  piotroski?: { score: number; max: number; tests: { name: string; pass: boolean | null; detail: string }[] };
+  altman?: { available: boolean; z?: number; zone?: string; components?: Record<string, number> };
+  disclaimer?: string;
+}
 export interface WAltData {
   available: boolean; symbol?: string; reason?: string;
   insider?: { available: boolean; buy_count?: number; sell_count?: number; buy_value?: number; sell_value?: number; net_value?: number;
@@ -371,6 +377,7 @@ export const api = {
   wStrategy: (symbol: string) => get<WStrategy>(`/w/strategy?symbol=${encodeURIComponent(symbol)}`),
   wScreener: (universe: string, force = false) => get<WScreener>(`/w/screener?universe=${universe}${force ? "&force=true" : ""}`),
   wAltData: (symbol: string) => get<WAltData>(`/w/altdata?symbol=${encodeURIComponent(symbol)}`),
+  wScores: (symbol: string) => get<WScores>(`/w/scores?symbol=${encodeURIComponent(symbol)}`),
   wFundamentals: (symbol: string) => get<WFundamentals>(`/w/fundamentals?symbol=${encodeURIComponent(symbol)}`),
   sectorOverview: (wiki: string, radar: string) =>
     get<SectorOverview>(`/sector?wiki=${encodeURIComponent(wiki)}&radar=${encodeURIComponent(radar)}`),
