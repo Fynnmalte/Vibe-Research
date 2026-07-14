@@ -140,7 +140,7 @@ def _cnbc_fetch(symbols: list[str]) -> dict[str, dict]:
     if not symbols or time.time() < _COOLDOWN["cnbc"]:
         return {}
     mapped = "|".join(_to_cnbc(s) for s in symbols)
-    _throttle()
+    _throttle("cnbc")
     try:
         r = requests.get(_CNBC_URL, params={
             "symbols": mapped, "requestMethod": "itv", "fund": "1", "output": "json",
@@ -197,7 +197,7 @@ def _cnbc_raw(sym: str) -> dict | None:
     open/high/low/volume/pe/fpe/eps/mktcap/revenue/ROE/Margen/Debt-Equity/52W). None bei Fehler/Cool-down."""
     if time.time() < _COOLDOWN["cnbc"]:
         return None
-    _throttle()
+    _throttle("cnbc")
     try:
         r = requests.get(_CNBC_URL, params={
             "symbols": _to_cnbc(sym), "requestMethod": "itv", "fund": "1", "output": "json",
@@ -324,22 +324,32 @@ def _cnbc_fundamentals(sym: str) -> dict:
 
 _CNBC_CHART = "https://ts-api.cnbc.com/harmony/app/charts/{rng}.json"
 
+# History-Cache: quant, strategy (via quant) und backtest ziehen dieselbe Tageshistorie —
+# ohne Cache wird sie pro Aktienseite mehrfach geladen. 10 Min TTL reicht (Tagesbars).
+_hist_cache: dict[tuple, tuple] = {}
+_HIST_TTL = 600.0
+
 
 def cnbc_history(symbol: str, rng: str = "1Y") -> list[dict]:
     """Tages-OHLCV-Historie von CNBC (kein Key). rng: '1Y'/'6M'/'3M' etc. — '6M' liefert
     hier ~2 Jahre Tagesbars, '1Y' ~2 Jahre. Liste von {time (ISO), open, high, low, close,
     volume}; leer bei Fehler/Cool-down. Für quant/backtest, wenn RapidAPI-Chart tot ist."""
+    key = (symbol.upper(), rng)
+    hit = _hist_cache.get(key)
+    if hit and time.time() - hit[0] < _HIST_TTL:
+        return hit[1]
     # US-Primaerquelle FMP zuerst (saubere OHLC-Historie); leere Liste -> Fallback CNBC.
     if _fmp is not None and _fmp.enabled():
         try:
             fh = _fmp.history(symbol)
             if fh:
+                _hist_cache[key] = (time.time(), fh)
                 return fh
         except Exception:
             pass
     if time.time() < _COOLDOWN["cnbc"]:
         return []
-    _throttle()
+    _throttle("cnbc")
     try:
         r = requests.get(_CNBC_CHART.format(rng=rng),
                          params={"symbol": _to_cnbc(symbol)}, headers=_UA, timeout=15)
@@ -365,6 +375,8 @@ def cnbc_history(symbol: str, rng: str = "1Y") -> list[dict]:
             "close": close,
             "volume": b.get("volume"),
         })
+    if out:
+        _hist_cache[key] = (time.time(), out)
     return out
 
 
@@ -494,20 +506,22 @@ def _chunks(items: tuple[str, ...] | list[str], size: int):
         yield list(items[i:i + size])
 
 
-# Globaler Durchsatz-Regler: Yahoo verträgt keine Bursts (mehrere gleichzeitige spark-Calls
-# beim Dashboard-Load → sofort HTTP 429). Alle Requests laufen daher durch ein Lock mit
-# Mindestabstand; der 300s-Cache sorgt dafür, dass nur der kalte Erstaufruf diesen Preis zahlt.
-_RATE_LOCK = threading.Lock()
-_MIN_INTERVAL = 1.3   # Sekunden zwischen zwei Yahoo-Requests
-_last_call = [0.0]
+# Durchsatz-Regler PRO QUELLE: Yahoo bannt bei Bursts hart (1,3 s Abstand nötig), CNBC ist
+# viel toleranter (0,35 s reicht). Getrennte Locks → CNBC- und Yahoo-Calls bremsen sich
+# nicht gegenseitig aus. Das ist der Haupt-Speedup: eine Aktienseite trifft fast nur CNBC.
+_INTERVALS = {"cnbc": 0.35, "yahoo": 1.3}
+_rate_locks = {"cnbc": threading.Lock(), "yahoo": threading.Lock()}
+_last_call = {"cnbc": [0.0], "yahoo": [0.0]}
 
 
-def _throttle():
-    with _RATE_LOCK:
-        wait = _MIN_INTERVAL - (time.time() - _last_call[0])
+def _throttle(source: str = "yahoo"):
+    lk = _rate_locks.get(source, _rate_locks["yahoo"])
+    iv = _INTERVALS.get(source, 1.3)
+    with lk:
+        wait = iv - (time.time() - _last_call[source][0])
         if wait > 0:
             time.sleep(wait)
-        _last_call[0] = time.time()
+        _last_call[source][0] = time.time()
 
 
 def _fetch(symbols: list[str]) -> list:
