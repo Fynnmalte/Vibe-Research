@@ -302,6 +302,18 @@ export interface WStrategy {
   bull_points?: string[]; bear_points?: string[];
   disclaimer?: string;
 }
+export interface WScreenerRow {
+  symbol: string; name: string;
+  price: number | null; change_pct: number | null; currency: string | null;
+  signal: "long" | "short" | "neutral" | null;
+  composite: number | null; conviction: number | null; archetype: string | null;
+  factors: Record<string, number | null>;
+}
+export interface WScreener {
+  universe: string; name: string; rows: WScreenerRow[];
+  computing: boolean; done: number; total: number;
+  computed_at: string | null; disclaimer: string;
+}
 export interface BacktestStrategy { key: string; name: string; params: Record<string, number>; desc: string }
 export interface BacktestResult {
   available: boolean; error?: string;
@@ -348,6 +360,7 @@ export const api = {
   wSearch: (q: string) => get<WSearchHit[]>(`/w/search?q=${encodeURIComponent(q)}`),
   wQuant: (symbol: string) => get<WQuant>(`/w/quant?symbol=${encodeURIComponent(symbol)}`),
   wStrategy: (symbol: string) => get<WStrategy>(`/w/strategy?symbol=${encodeURIComponent(symbol)}`),
+  wScreener: (universe: string, force = false) => get<WScreener>(`/w/screener?universe=${universe}${force ? "&force=true" : ""}`),
   wFundamentals: (symbol: string) => get<WFundamentals>(`/w/fundamentals?symbol=${encodeURIComponent(symbol)}`),
   sectorOverview: (wiki: string, radar: string) =>
     get<SectorOverview>(`/sector?wiki=${encodeURIComponent(wiki)}&radar=${encodeURIComponent(radar)}`),

@@ -31,6 +31,7 @@ import theses
 import quant
 import backtest
 import strategy
+import screener
 import agent as agent_mod
 import notify
 
@@ -407,6 +408,16 @@ def w_strategy(symbol: str = Query(..., min_length=1, max_length=16)):
         return {"data": strategy.analyze(symbol)}
     except Exception as e:  # noqa: BLE001
         raise HTTPException(502, f"Strategie-Analyse nicht verfügbar: {e}") from e
+
+
+@app.get("/api/w/screener")
+def w_screener(universe: str = Query("us"), force: bool = Query(False)):
+    """Universe-Screener: rankt ein Universum (us | dax) nach dem Faktor-Modell. Rechnet im
+    Hintergrund (Cache), liefert sofort Stand + Fortschritt (done/total)."""
+    try:
+        return {"data": screener.get(universe, force=force)}
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(502, f"Screener nicht verfügbar: {e}") from e
 
 
 @app.get("/api/sector")

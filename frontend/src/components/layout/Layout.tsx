@@ -3,7 +3,7 @@ import { Link, Outlet, useLocation } from "react-router-dom";
 import {
   Activity, Radar, LayoutGrid, Wallet, Settings, Search, NotebookPen,
   Moon, Sun, ChevronsLeft, ChevronsRight, LineChart, Github, UserRound,
-  Cog, Cpu, Database, Cable, Rocket, FlaskConical, Star, FileText,
+  Cog, Cpu, Database, Cable, Rocket, FlaskConical, Star, FileText, ListFilter,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDarkMode } from "@/hooks/useDarkMode";
@@ -17,8 +17,9 @@ const NAV = [
   { to: "/intel", icon: Radar, label: "Nachrichten-Radar" },
   { to: "/sectors", icon: LayoutGrid, label: "Sektoren" },
   { to: "/stock-data", icon: Search, label: "Aktiendaten" },
+  { to: "/screener", icon: ListFilter, label: "Faktor-Screener" },
   { to: "/watchlist", icon: Star, label: "Watchlist" },
-  { to: "/portfolio", icon: Wallet, label: "Mein Portfolio" },
+  { to: "/portfolio", icon: Wallet, label: "Mein Musterdepot" },
   { to: "/my-reports", icon: FileText, label: "Meine Analysen" },
   { to: "/notes", icon: NotebookPen, label: "Notizen" },
   { to: "/settings", icon: Settings, label: "KI verbinden" },
