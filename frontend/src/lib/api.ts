@@ -302,6 +302,15 @@ export interface WStrategy {
   bull_points?: string[]; bear_points?: string[];
   disclaimer?: string;
 }
+export interface WAltData {
+  available: boolean; symbol?: string; reason?: string;
+  insider?: { available: boolean; buy_count?: number; sell_count?: number; buy_value?: number; sell_value?: number; net_value?: number;
+    recent?: { date: string; owner: string; code: string; shares: number; value: number }[] };
+  short?: { available: boolean; date?: string; short_volume?: number; total_volume?: number; short_ratio?: number | null };
+  options?: { available: boolean; pc_oi_ratio?: number | null; pc_vol_ratio?: number | null; call_oi?: number; put_oi?: number; avg_iv?: number | null };
+  notes?: { sev: string; text: string }[];
+  disclaimer?: string;
+}
 export interface WScreenerRow {
   symbol: string; name: string;
   price: number | null; change_pct: number | null; currency: string | null;
@@ -361,6 +370,7 @@ export const api = {
   wQuant: (symbol: string) => get<WQuant>(`/w/quant?symbol=${encodeURIComponent(symbol)}`),
   wStrategy: (symbol: string) => get<WStrategy>(`/w/strategy?symbol=${encodeURIComponent(symbol)}`),
   wScreener: (universe: string, force = false) => get<WScreener>(`/w/screener?universe=${universe}${force ? "&force=true" : ""}`),
+  wAltData: (symbol: string) => get<WAltData>(`/w/altdata?symbol=${encodeURIComponent(symbol)}`),
   wFundamentals: (symbol: string) => get<WFundamentals>(`/w/fundamentals?symbol=${encodeURIComponent(symbol)}`),
   sectorOverview: (wiki: string, radar: string) =>
     get<SectorOverview>(`/sector?wiki=${encodeURIComponent(wiki)}&radar=${encodeURIComponent(radar)}`),

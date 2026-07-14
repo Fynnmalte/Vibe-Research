@@ -32,6 +32,7 @@ import quant
 import backtest
 import strategy
 import screener
+import altdata
 import agent as agent_mod
 import notify
 
@@ -418,6 +419,16 @@ def w_screener(universe: str = Query("us"), force: bool = Query(False)):
         return {"data": screener.get(universe, force=force)}
     except Exception as e:  # noqa: BLE001
         raise HTTPException(502, f"Screener nicht verfügbar: {e}") from e
+
+
+@app.get("/api/w/altdata")
+def w_altdata(symbol: str = Query(..., min_length=1, max_length=16)):
+    """Alt-Data (nur US): SEC-Insider (Form 4) + FINRA-Short-Volumen + CBOE-Optionen.
+    Objektive öffentliche Daten, keine Empfehlung."""
+    try:
+        return {"data": altdata.summary(symbol)}
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(502, f"Alt-Data nicht verfügbar: {e}") from e
 
 
 @app.get("/api/sector")

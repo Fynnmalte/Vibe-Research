@@ -8,6 +8,7 @@ import { StockSearch } from "@/components/ui/StockSearch";
 import { ThesisPanel } from "@/components/ui/ThesisPanel";
 import { AnalystPanel } from "@/components/ui/AnalystPanel";
 import { FundamentalsPanel } from "@/components/ui/FundamentalsPanel";
+import { AltDataPanel } from "@/components/ui/AltDataPanel";
 import { StrategyPanel } from "@/components/ui/StrategyPanel";
 import { QuantPanel } from "@/components/ui/QuantPanel";
 import { BacktestPanel } from "@/components/ui/BacktestPanel";
@@ -53,13 +54,14 @@ export function StockData() {
   const [quantCtx, setQuantCtx] = useState("");
   const [fundCtx, setFundCtx] = useState("");
   const [strategyCtx, setStrategyCtx] = useState("");
+  const [altCtx, setAltCtx] = useState("");
   const runId = useRef(0);
 
   const load = async (symbol: string) => {
     const s = symbol.trim().toUpperCase();
     if (!s) return;
     const rid = ++runId.current;
-    setLoading(true); setErr(null); setData(null); setThesisCtx(""); setQuantCtx(""); setFundCtx(""); setStrategyCtx("");
+    setLoading(true); setErr(null); setData(null); setThesisCtx(""); setQuantCtx(""); setFundCtx(""); setStrategyCtx(""); setAltCtx("");
     try {
       const d = await api.wStock(s);
       if (rid !== runId.current) return;
@@ -114,7 +116,7 @@ export function StockData() {
       `Marktkap. ${money(data.mcap, data.currency)} · KGV ${round2(data.pe)} · Forward-KGV ${round2(data.forward_pe)} · EPS ${round2(data.eps)}\n` +
       `Tag: Eröffnung ${fmt(data.open)}, Hoch ${fmt(data.high)}, Tief ${fmt(data.low)}, Volumen ${data.volume ?? "—"}\n` +
       `52-Wochen: ${fmt(data.week52_low)}–${fmt(data.week52_high)}${r52 != null ? ` (aktuell bei ${r52.toFixed(0)}% der Spanne)` : ""}` +
-      fundCtx + strategyCtx + quantCtx + thesisCtx
+      fundCtx + strategyCtx + altCtx + quantCtx + thesisCtx
     : "";
 
   return (
@@ -244,6 +246,8 @@ export function StockData() {
           <FundamentalsPanel symbol={data.symbol} onContext={setFundCtx} />
 
           <StrategyPanel symbol={data.symbol} onContext={setStrategyCtx} />
+
+          <AltDataPanel symbol={data.symbol} onContext={setAltCtx} />
 
           <QuantPanel symbol={data.symbol} onContext={setQuantCtx} />
 
