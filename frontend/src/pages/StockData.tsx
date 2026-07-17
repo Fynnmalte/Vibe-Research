@@ -7,6 +7,7 @@ import { AskAiButton } from "@/components/ui/AskAiButton";
 import { StockSearch } from "@/components/ui/StockSearch";
 import { ThesisPanel } from "@/components/ui/ThesisPanel";
 import { AnalystPanel } from "@/components/ui/AnalystPanel";
+import { SynthesisPanel } from "@/components/ui/SynthesisPanel";
 import { FundamentalsPanel } from "@/components/ui/FundamentalsPanel";
 import { AltDataPanel } from "@/components/ui/AltDataPanel";
 import { ScoresPanel } from "@/components/ui/ScoresPanel";
@@ -57,13 +58,14 @@ export function StockData() {
   const [strategyCtx, setStrategyCtx] = useState("");
   const [altCtx, setAltCtx] = useState("");
   const [scoresCtx, setScoresCtx] = useState("");
+  const [synthCtx, setSynthCtx] = useState("");
   const runId = useRef(0);
 
   const load = async (symbol: string) => {
     const s = symbol.trim().toUpperCase();
     if (!s) return;
     const rid = ++runId.current;
-    setLoading(true); setErr(null); setData(null); setThesisCtx(""); setQuantCtx(""); setFundCtx(""); setStrategyCtx(""); setAltCtx(""); setScoresCtx("");
+    setLoading(true); setErr(null); setData(null); setThesisCtx(""); setQuantCtx(""); setFundCtx(""); setStrategyCtx(""); setAltCtx(""); setScoresCtx(""); setSynthCtx("");
     try {
       const d = await api.wStock(s);
       if (rid !== runId.current) return;
@@ -118,7 +120,7 @@ export function StockData() {
       `Marktkap. ${money(data.mcap, data.currency)} · KGV ${round2(data.pe)} · Forward-KGV ${round2(data.forward_pe)} · EPS ${round2(data.eps)}\n` +
       `Tag: Eröffnung ${fmt(data.open)}, Hoch ${fmt(data.high)}, Tief ${fmt(data.low)}, Volumen ${data.volume ?? "—"}\n` +
       `52-Wochen: ${fmt(data.week52_low)}–${fmt(data.week52_high)}${r52 != null ? ` (aktuell bei ${r52.toFixed(0)}% der Spanne)` : ""}` +
-      fundCtx + scoresCtx + strategyCtx + altCtx + quantCtx + thesisCtx
+      synthCtx + fundCtx + scoresCtx + strategyCtx + altCtx + quantCtx + thesisCtx
     : "";
 
   return (
@@ -208,6 +210,8 @@ export function StockData() {
               ))}
             </div>
           </GlassCard>
+
+          <SynthesisPanel symbol={data.symbol} onContext={setSynthCtx} />
 
           {(data.pe != null || data.eps != null || data.week52_high != null) && (
             <GlassCard className="mb-4">

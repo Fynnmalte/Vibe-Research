@@ -34,6 +34,7 @@ import strategy
 import screener
 import altdata
 import scores
+import synthesis
 import agent as agent_mod
 import notify
 
@@ -440,6 +441,16 @@ def w_scores(symbol: str = Query(..., min_length=1, max_length=16)):
         return {"data": scores.analyze(symbol)}
     except Exception as e:  # noqa: BLE001
         raise HTTPException(502, f"Bilanz-Scores nicht verfügbar: {e}") from e
+
+
+@app.get("/api/w/synthesis")
+def w_synthesis(symbol: str = Query(..., min_length=1, max_length=16)):
+    """Synthese/Gesamtbild: verdichtet Faktor-Modell + Quant + Alt-Data + Bilanz-Scores
+    mechanisch zu Signal-Matrix, Divergenzen, Setup-Typ und Fazit. Sofort, ohne KI."""
+    try:
+        return {"data": synthesis.analyze(symbol)}
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(502, f"Synthese nicht verfügbar: {e}") from e
 
 
 @app.get("/api/sector")

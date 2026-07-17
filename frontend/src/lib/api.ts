@@ -302,6 +302,13 @@ export interface WStrategy {
   bull_points?: string[]; bear_points?: string[];
   disclaimer?: string;
 }
+export interface WSynthesis {
+  available: boolean; symbol?: string;
+  lean?: "long" | "short" | "neutral"; conviction?: number; setup?: string;
+  bull_count?: number; bear_count?: number;
+  signals?: { name: string; state: "bull" | "neutral" | "bear"; detail: string }[];
+  divergences?: string[]; conclusion?: string; note?: string;
+}
 export interface WScores {
   available: boolean; symbol?: string; reason?: string;
   piotroski?: { score: number; max: number; tests: { name: string; pass: boolean | null; detail: string }[] };
@@ -378,6 +385,7 @@ export const api = {
   wScreener: (universe: string, force = false) => get<WScreener>(`/w/screener?universe=${universe}${force ? "&force=true" : ""}`),
   wAltData: (symbol: string) => get<WAltData>(`/w/altdata?symbol=${encodeURIComponent(symbol)}`),
   wScores: (symbol: string) => get<WScores>(`/w/scores?symbol=${encodeURIComponent(symbol)}`),
+  wSynthesis: (symbol: string) => get<WSynthesis>(`/w/synthesis?symbol=${encodeURIComponent(symbol)}`),
   wFundamentals: (symbol: string) => get<WFundamentals>(`/w/fundamentals?symbol=${encodeURIComponent(symbol)}`),
   sectorOverview: (wiki: string, radar: string) =>
     get<SectorOverview>(`/sector?wiki=${encodeURIComponent(wiki)}&radar=${encodeURIComponent(radar)}`),

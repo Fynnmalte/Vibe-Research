@@ -25,8 +25,10 @@ Quellen (CNBC / Nasdaq); eigene Keys (RapidAPI, FMP) sind optional für Zusatzfe
 |---|---|
 | 📊&nbsp;**Tagesrückblick** | Indizes (S&P 500 / Nasdaq / Dow / DAX / Euro&nbsp;Stoxx&nbsp;50 / Hang&nbsp;Seng) · **Börsen-Handelszeit** (offen/zu je Markt) + Datenfrische · beobachtete Aktien (Live-Kurse) · Sektor-Tagesperformance (Select-Sector-ETFs) · stärkste/schwächste Werte (DAX 40 + US-Large-Caps) · KI-Tagesrückblick |
 | 📡&nbsp;**Nachrichten-Radar** | 12 Branchen, 108 öffentliche RSS-Quellen · KI fasst die „Kernpunkte heute" zusammen |
-| 🔍&nbsp;**Aktiendaten** | Suche (Name / Ticker / ISIN) → Kurs, OHLC, Volumen, Marktkap. · **Kennzahlen** (KGV / Forward-KGV / EPS / 52-Wochen-Spanne) · **Quant-Analyse** (RSI / MACD / SMA / Momentum-Trend-Value-Score) · **Backtesting-Lab** (Regel-Strategien vs. Buy&Hold, 2 Jahre Historie) · **Meine These** (Annahmen gegen Live-Daten prüfen) · **Fundamental & Risiko** (Bewertung / Profitabilität / Verschuldung / Risiko-Ampel) · **Analysten-Runde** (5 KI-Perspektiven debattieren) |
+| 🔍&nbsp;**Aktiendaten** | Suche (Name / Ticker / ISIN) → Kurs, OHLC, Volumen, Marktkap. · **Synthese/Gesamtbild** (verdichtet alle Signale mechanisch zu Setup-Typ, Divergenzen & Fazit — sofort, ohne KI) · **Kennzahlen** · **Fundamental & Risiko** · **Bilanz-Scores** (Piotroski F-Score + Altman Z aus SEC-XBRL, US) · **Positionierung** (Multi-Faktor-Modell → Long/Neutral/Short) · **Alt-Data** (SEC-Insider + FINRA-Short + CBOE-Optionen, US) · **Quant-Analyse** (RSI / MACD / SMA / Scores) · **Backtesting-Lab** (Regel-Strategien vs. Buy&Hold) · **Meine These** · **Analysten-Runde** (5 KI-Perspektiven) · **„Ins Depot"** (Schnellkauf zum Live-Kurs) |
+| 🧮&nbsp;**Faktor-Screener** | ganzes Universum (US-Large-Caps / DAX 40) nach dem Faktor-Modell ranken → Top-Long / Top-Short auf einen Blick, mit Faktor-Scores je Titel |
 | ⭐&nbsp;**Watchlist** | Symbole im Stapel einfügen (Komma / Leerzeichen / Zeilenumbruch) · Tabellen-Übersicht · nur lokal gespeichert |
+| 💼&nbsp;**Musterdepot** | Positionen per „Ins Depot" zum Live-Kurs kaufen, „Verkaufen" schließt zum Kurs · Live-G/V · **App-Signal je Position** (wie das Faktor-Modell sie bewertet) · nur lokal |
 | 🧩&nbsp;**Sektoren** | Sektor- und Wertschöpfungsketten-Übersicht |
 | 💼&nbsp;**Musterdepot** | Aktien zum Live-Kurs kaufen (Button „Ins Depot" auf der Aktienseite) · Verkauf zum aktuellen Kurs · Live-G/V + **App-Signal je Position** (Faktor-Modell) · realisierter G/V (nur lokal, kein Upload) |
 | 📄&nbsp;**Meine Analysen** | eigene Research-Dateien hochladen (PDF / Word / txt / Tabellen / Bilder), automatisch nach Branche abgelegt (**nur lokal, kein Upload, nicht im Repository**) |
@@ -120,6 +122,17 @@ Fallback-Kette, damit die App auch ohne Key funktioniert:
 **Aktiensuche**: RapidAPI (Key) → Yahoo (alle Märkte) → Nasdaq (gratis, US). Direkteingabe
 eines Symbols (`AAPL`, `SAP.DE`, `0700.HK`) funktioniert immer.
 
+**Alt-Data & Bilanz-Scores (nur US, alle gratis & keyless)** — Signale, die Standard-Dashboards
+nicht zeigen:
+- **SEC EDGAR** — Insider-Transaktionen (Form 4) + Mehrjahres-Bilanzen (XBRL, für Piotroski &
+  Altman). SEC verlangt ein Kontakt-Muster im User-Agent.
+- **FINRA RegSHO** — täglicher Anteil leerverkauften Volumens.
+- **CBOE** (verzögert) — Put/Call-Ratio, Open Interest, implizite Vola.
+
+Die **Analyse-Schicht** (`strategy.py`, `screener.py`, `scores.py`, `altdata.py`, `synthesis.py`)
+verdichtet all das mechanisch — inklusive einer **Synthese** (Setup-Typ, Divergenzen, Fazit)
+ohne KI-Aufruf. Die KI bleibt für aktuelle Nachrichten & Katalysatoren.
+
 **Nachrichten-Radar**: 12 Branchen, 108 öffentliche RSS-Quellen in `backend/newsradar.py` +
 `backend/news_sources.json` (reine Standardbibliothek, kein Key).
 
@@ -174,6 +187,10 @@ Vibe-Research/
 │   ├── fmp.py            Financial Modeling Prep (optional, US-Fundamentals)
 │   ├── quant.py          technische Indikatoren + Faktor-Scorecard
 │   ├── strategy.py       Positionierung (Multi-Faktor: Value/Quality/Health/Momentum)
+│   ├── screener.py       Universe-Screener (rankt US-Large/DAX40, Hintergrund-Cache)
+│   ├── altdata.py        Alt-Data US (SEC-Insider / FINRA-Short / CBOE-Optionen)
+│   ├── scores.py         Bilanz-Scores US (Piotroski / Altman aus SEC-XBRL)
+│   ├── synthesis.py      Synthese — verdichtet alle Signale zu Fazit + Divergenzen
 │   ├── backtest.py       Regel-Strategien vs. Buy&Hold
 │   ├── theses.py         „Meine These" — Annahmen gegen Live-Daten
 │   ├── newsradar.py      Nachrichten-Radar
