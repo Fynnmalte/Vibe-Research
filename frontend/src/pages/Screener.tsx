@@ -30,6 +30,7 @@ const FACTORS: [string, string][] = [
 
 export function Screener() {
   const [uni, setUni] = useState("us");
+  const [sortBy, setSortBy] = useState<"composite" | "momentum">("composite");
   const [data, setData] = useState<WScreener | null>(null);
   const poll = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -48,7 +49,9 @@ export function Screener() {
     return () => { if (poll.current) clearTimeout(poll.current); };
   }, [uni, fetchOnce]);
 
-  const rows = data?.rows || [];
+  const rows0 = data?.rows || [];
+  const rows = [...rows0].sort((a, b) =>
+    sortBy === "momentum" ? (b.mom_score ?? -1) - (a.mom_score ?? -1) : (b.composite ?? -1) - (a.composite ?? -1));
   const computing = data?.computing;
   const progress = data && data.total ? Math.round((data.done / data.total) * 100) : 0;
 
@@ -79,6 +82,14 @@ export function Screener() {
             className={cn("rounded-lg border px-3 py-1.5 text-sm",
               uni === u.key ? "border-primary/50 bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground")}>
             {u.label}
+          </button>
+        ))}
+        <span className="ml-2 text-xs text-muted-foreground/60">Ranking:</span>
+        {([["composite", "Faktor"], ["momentum", "Momentum"]] as const).map(([k, l]) => (
+          <button key={k} onClick={() => setSortBy(k)}
+            className={cn("rounded-lg border px-3 py-1.5 text-sm",
+              sortBy === k ? "border-primary/50 bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground")}>
+            {l}
           </button>
         ))}
         <button onClick={() => fetchOnce(uni, true)} disabled={computing}
@@ -138,6 +149,10 @@ export function Screener() {
                   <th className="px-2 py-2 font-medium">Signal</th>
                   <th className="px-2 py-2 font-medium">Score</th>
                   {FACTORS.map(([, l]) => <th key={l} className="px-2 py-2 text-center font-medium">{l}</th>)}
+                  <th className="px-2 py-2 text-center font-medium" title="Momentum-Score (Relativstärke + 52W-Hoch + Volumen)">M-Score</th>
+                  <th className="px-2 py-2 text-center font-medium" title="Relativstärke 3M (Aktie − Index)">RS-3M</th>
+                  <th className="px-2 py-2 text-center font-medium" title="% unter 52W-Hoch · ▲ = Breakout">%&nbsp;Hoch</th>
+                  <th className="px-2 py-2 text-center font-medium" title="Volumen vs. 20-Tage-Schnitt">RelVol</th>
                   <th className="px-2 py-2 font-medium">Archetyp</th>
                 </tr>
               </thead>
@@ -162,6 +177,12 @@ export function Screener() {
                       {FACTORS.map(([k]) => (
                         <td key={k} className={cn("px-2 py-2 text-center font-mono text-xs", scoreColor(r.factors[k]))}>{r.factors[k] ?? "—"}</td>
                       ))}
+                      <td className={cn("px-2 py-2 text-center font-mono text-xs font-bold", scoreColor(r.mom_score))}>{r.mom_score ?? "—"}</td>
+                      <td className={cn("px-2 py-2 text-center font-mono text-xs", pctColor(r.rs_3m))}>{r.rs_3m == null ? "—" : `${r.rs_3m > 0 ? "+" : ""}${r.rs_3m}`}</td>
+                      <td className={cn("px-2 py-2 text-center font-mono text-xs", r.breakout ? "text-success font-bold" : "text-muted-foreground")}>
+                        {r.pct_from_high == null ? "—" : `${r.pct_from_high}%${r.breakout ? " ▲" : ""}`}
+                      </td>
+                      <td className={cn("px-2 py-2 text-center font-mono text-xs", (r.rel_volume ?? 0) >= 1.5 ? "text-success font-bold" : "text-muted-foreground")}>{r.rel_volume ?? "—"}</td>
                       <td className="px-2 py-2 text-xs text-muted-foreground/70">{r.archetype}</td>
                     </tr>
                   );

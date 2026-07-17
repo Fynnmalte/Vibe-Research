@@ -16,6 +16,7 @@ import threading
 import time
 from datetime import datetime
 
+import momentum
 import strategy
 import wstock
 
@@ -29,7 +30,7 @@ _lock = threading.Lock()
 _state: dict[str, dict] = {}   # universe -> {ts, rows, computing, done, total}
 
 
-def _row(sym: str, st: dict, q: dict) -> dict:
+def _row(sym: str, st: dict, q: dict, mom: dict) -> dict:
     return {
         "symbol": sym,
         "name": (q.get("name") or sym),
@@ -41,6 +42,12 @@ def _row(sym: str, st: dict, q: dict) -> dict:
         "conviction": st.get("conviction"),
         "archetype": st.get("archetype"),
         "factors": {f["key"]: f["score"] for f in st.get("factors", [])},
+        # Momentum-Block: Relativstärke, 52W-Hoch-Nähe, relatives Volumen, Momentum-Score
+        "mom_score": mom.get("score"),
+        "rs_3m": mom.get("rs_3m"),
+        "pct_from_high": mom.get("pct_from_high"),
+        "breakout": mom.get("breakout"),
+        "rel_volume": mom.get("rel_volume"),
     }
 
 
@@ -57,7 +64,11 @@ def _compute(universe: str, symbols: list[str]) -> None:
         except Exception:
             st = {"available": False}
         if st.get("available") and st.get("composite") is not None:
-            rows.append(_row(sym, st, quotes.get(sym, {})))
+            try:
+                mom = momentum.metrics(sym)   # nutzt gecachte Historie (strategy hat sie schon geladen)
+            except Exception:
+                mom = {}
+            rows.append(_row(sym, st, quotes.get(sym, {}), mom))
         with _lock:
             if universe in _state:
                 _state[universe]["done"] = i + 1

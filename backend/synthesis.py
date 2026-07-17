@@ -14,6 +14,7 @@ nicht können: aktuelle Nachrichten & Katalysatoren. Objektiv, keine Empfehlung/
 from __future__ import annotations
 
 import altdata
+import momentum as momentum_mod
 import quant
 import scores as scores_mod
 import strategy
@@ -42,6 +43,7 @@ def analyze(symbol: str) -> dict:
     qf = q.get("factors", {}) if q.get("available") else {}
     alt = altdata.summary(sym)
     sc = scores_mod.analyze(sym)
+    mo = momentum_mod.metrics(sym)
 
     val = _fac(st, "value"); qual = _fac(st, "quality"); health = _fac(st, "health"); mom = _fac(st, "momentum")
     trend = qf.get("trend", {}).get("score")
@@ -86,6 +88,19 @@ def analyze(symbol: str) -> dict:
     if short_ratio is not None:
         sig("Short-Anteil", "bear" if short_ratio >= 45 else "neutral", f"{short_ratio}% des Tagesvolumens")
 
+    # Momentum-Signale (Relativstärke / 52W-Hoch / Volumen)
+    rs3 = mo.get("rs_3m") if mo.get("available") else None
+    pfh = mo.get("pct_from_high") if mo.get("available") else None
+    breakout = mo.get("breakout") if mo.get("available") else None
+    relvol = mo.get("rel_volume") if mo.get("available") else None
+    if rs3 is not None:
+        sig("Relativstärke", "bull" if rs3 >= 2 else ("bear" if rs3 <= -5 else "neutral"), f"3M vs. Index {'+' if rs3>0 else ''}{rs3}%")
+    if pfh is not None:
+        sig("52W-Hoch", "bull" if breakout else ("bear" if pfh <= -25 else "neutral"),
+            f"{pfh}% vom Hoch" + (" · Breakout" if breakout else ""))
+    if relvol is not None:
+        sig("Volumen", "bull" if relvol >= 1.5 else ("bear" if relvol <= 0.6 else "neutral"), f"RelVol {relvol}×")
+
     bulls = sum(1 for s in signals if s["state"] == "bull")
     bears = sum(1 for s in signals if s["state"] == "bear")
 
@@ -101,6 +116,10 @@ def analyze(symbol: str) -> dict:
         div.append(f"Hoher Short-Anteil ({short_ratio}%) + Volatilität ({vol}% p.a.) = Squeeze-Brennstoff bei Ausbruch.")
     if altman_zone == "distress" and val is not None and val >= 60:
         div.append("Optisch günstig, aber Altman-Distress — mögliche Value-Falle.")
+    if breakout and relvol is not None and relvol < 1.0:
+        div.append(f"Nahe 52W-Hoch, aber ohne Volumen (RelVol {relvol}×) — Ausbruch unbestätigt, Fakeout-Gefahr.")
+    if rs3 is not None and rs3 >= 3 and (ret3 is not None and ret3 < 0):
+        div.append("Relativ stark trotz fallendem Kurs — hält sich besser als der Markt (Relativstärke-Führer).")
 
     # --- Setup-Klassifikation ---
     if altman_zone == "distress" or (health is not None and health <= 25):

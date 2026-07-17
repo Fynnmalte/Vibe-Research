@@ -330,6 +330,8 @@ export interface WScreenerRow {
   signal: "long" | "short" | "neutral" | null;
   composite: number | null; conviction: number | null; archetype: string | null;
   factors: Record<string, number | null>;
+  mom_score: number | null; rs_3m: number | null; pct_from_high: number | null;
+  breakout: boolean | null; rel_volume: number | null;
 }
 export interface WScreener {
   universe: string; name: string; rows: WScreenerRow[];
