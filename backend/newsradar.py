@@ -12,6 +12,8 @@ from __future__ import annotations
 import json
 import os
 import re
+import threading
+import time
 import urllib.request
 import requests
 import xml.etree.ElementTree as ET
@@ -170,3 +172,30 @@ def get_radar(force: bool = False) -> dict:
     if force:
         return fetch_radar()
     return load_cache() or skeleton()
+
+
+def _cache_age() -> float:
+    """Alter der Radar-Cache-Datei in Sekunden (sehr groß, wenn sie fehlt)."""
+    try:
+        return time.time() - os.path.getmtime(CACHE_FILE)
+    except OSError:
+        return 1e9
+
+
+def start_scheduler(interval: int = 1800) -> None:
+    """Nachrichten-Radar periodisch im Hintergrund aktualisieren (daemon-Thread).
+    Beim Start sofort neu holen, wenn der Cache älter als das Intervall ist — sonst
+    zeigt der Radar veraltete Nachrichten (der Cache wurde sonst nie automatisch erneuert)."""
+    def loop():
+        try:
+            if _cache_age() > interval:
+                fetch_radar()
+        except Exception:
+            pass
+        while True:
+            time.sleep(interval)
+            try:
+                fetch_radar()
+            except Exception:
+                pass
+    threading.Thread(target=loop, daemon=True).start()

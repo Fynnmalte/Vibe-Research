@@ -42,6 +42,8 @@ app = FastAPI(title="Vibe-Research API", version="0.1.1")
 
 # 每半小时后台刷新持仓数据
 pf.start_scheduler(1800)
+# Nachrichten-Radar alle 30 Min automatisch aktualisieren (sonst bleibt der Cache stale)
+newsradar.start_scheduler(1800)
 
 # CORS：默认放开（本地自托管友好）；公网部署时用 VR_ALLOW_ORIGINS 收紧成白名单。
 #   例：VR_ALLOW_ORIGINS="https://myhost"  （逗号分隔多个）
